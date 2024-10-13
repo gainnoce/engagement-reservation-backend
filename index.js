@@ -10,21 +10,30 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
-mongoose.connect(process.env.MONGODB_URI, {
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://gainnoce:Test99@engagementsystem.sojs2.mongodb.net/sample_mflix?retryWrites=true&w=majority';
+
+mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => console.log('MongoDB connected'))
-.catch(err => console.log(err));
+.then(() => console.log('MongoDB connected to sample_mflix'))
+.catch(err => {
+  console.error('MongoDB connection error:', err);
+  process.exit(1);
+});
 
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the Expert Engagement Reservation System API' });
 });
 
+app.get('/test', (req, res) => {
+  res.json({ message: 'Test route working' });
+});
+
 app.post('/api/engagement-requests', async (req, res) => {
   try {
     console.log('Received data:', req.body);
-    // Process the data, save to database, etc.
+    // TODO: Process the data, save to database, etc.
     res.status(201).json({ message: 'Engagement request received successfully' });
   } catch (error) {
     console.error('Error processing request:', error);
