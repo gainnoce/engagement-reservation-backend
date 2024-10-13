@@ -10,9 +10,12 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://gainnoce:Test99@engagementsystem.sojs2.mongodb.net/sample_mflix?retryWrites=true&w=majority';
+if (!process.env.MONGODB_URI) {
+  console.error('MONGODB_URI is not set in the environment variables');
+  process.exit(1);
+}
 
-mongoose.connect(MONGODB_URI, {
+mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
