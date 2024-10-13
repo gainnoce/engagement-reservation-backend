@@ -25,6 +25,29 @@ mongoose.connect(process.env.MONGODB_URI, {
   process.exit(1);
 });
 
+// Admin routes
+app.get('/admin/engagements', async (req, res) => {
+  try {
+    // TODO: Fetch engagements from the database
+    const engagements = []; // This should be replaced with actual data from your database
+    res.json(engagements);
+  } catch (error) {
+    console.error('Error fetching engagements:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+app.get('/admin/experts', async (req, res) => {
+  try {
+    // TODO: Fetch experts from the database
+    const experts = []; // This should be replaced with actual data from your database
+    res.json(experts);
+  } catch (error) {
+    console.error('Error fetching experts:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the Expert Engagement Reservation System API' });
 });
