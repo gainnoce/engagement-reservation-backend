@@ -18,6 +18,8 @@ if (!process.env.MONGODB_URI) {
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
+  retryWrites: true,
+  w: 'majority'
 })
 .then(() => console.log('MongoDB connected to sample_mflix'))
 .catch(err => {
