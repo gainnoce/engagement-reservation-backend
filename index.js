@@ -1,12 +1,20 @@
 const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-require('dotenv').config();
-
 const app = express();
+const cors = require('cors');
 
 app.use(cors());
 app.use(express.json());
+
+app.post('/api/engagement-requests', async (req, res) => {
+  try {
+    console.log('Received data:', req.body);
+    // Process the data, save to database, etc.
+    res.status(201).json({ message: 'Engagement request received successfully' });
+  } catch (error) {
+    console.error('Error processing request:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
 
 const PORT = process.env.PORT || 3000;
 
