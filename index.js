@@ -1,20 +1,12 @@
 const express = require('express');
-const app = express();
+const mongoose = require('mongoose');
 const cors = require('cors');
+require('dotenv').config();
+
+const app = express();
 
 app.use(cors());
 app.use(express.json());
-
-app.post('/api/engagement-requests', async (req, res) => {
-  try {
-    console.log('Received data:', req.body);
-    // Process the data, save to database, etc.
-    res.status(201).json({ message: 'Engagement request received successfully' });
-  } catch (error) {
-    console.error('Error processing request:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-});
 
 const PORT = process.env.PORT || 3000;
 
@@ -27,6 +19,17 @@ mongoose.connect(process.env.MONGODB_URI, {
 
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the Expert Engagement Reservation System API' });
+});
+
+app.post('/api/engagement-requests', async (req, res) => {
+  try {
+    console.log('Received data:', req.body);
+    // Process the data, save to database, etc.
+    res.status(201).json({ message: 'Engagement request received successfully' });
+  } catch (error) {
+    console.error('Error processing request:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 });
 
 app.listen(PORT, () => {
