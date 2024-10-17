@@ -3,8 +3,10 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
 
-const app = express();
+// Add this line to import the EngagementRequest model
+const EngagementRequest = require('./src/models/EngagementRequest');
 
+const app = express();
 app.use(cors());
 app.use(express.json());
 
@@ -30,8 +32,7 @@ mongoose.connect(process.env.MONGODB_URI, {
 // Admin routes
 app.get('/admin/engagements', async (req, res) => {
   try {
-    // TODO: Fetch engagements from the database
-    const engagements = []; // This should be replaced with actual data from your database
+    const engagements = await EngagementRequest.find();
     res.json(engagements);
   } catch (error) {
     console.error('Error fetching engagements:', error);
@@ -58,11 +59,25 @@ app.get('/test', (req, res) => {
   res.json({ message: 'Test route working' });
 });
 
+app.get('/api/all-engagement-requests', async (req, res) => {
+  try {
+    const requests = await EngagementRequest.find();
+    console.log('Retrieved all engagement requests:', requests);
+    res.json(requests);
+  } catch (error) {
+    console.error('Error retrieving engagement requests:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 app.post('/api/engagement-requests', async (req, res) => {
   try {
-    console.log('Received data:', req.body);
-    // TODO: Process the data, save to database, etc.
-    res.status(201).json({ message: 'Engagement request received successfully' });
+    console.log('Received engagement request:', req.body);
+    const request = new EngagementRequest(req.body);
+    console.log('Attempting to save request to database...');
+    const newRequest = await request.save();
+    console.log('Request saved successfully:', newRequest);
+    res.status(201).json(newRequest);
   } catch (error) {
     console.error('Error processing request:', error);
     res.status(500).json({ message: 'Internal server error' });
