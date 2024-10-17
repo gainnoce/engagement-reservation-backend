@@ -4,7 +4,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 // Add this line to import the EngagementRequest model
-const EngagementRequest = require('./src/models/EngagementRequest');
+const EngagementRequest = require('./EngagementRequest');
 
 const app = express();
 app.use(cors());
