@@ -20,14 +20,14 @@ if (!process.env.MONGODB_URI) {
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  retryWrites: true,
-  w: 'majority'
+  writeConcern: {
+    w: 'majority',
+    j: true,
+    wtimeout: 1000
+  }
 })
-.then(() => console.log('MongoDB connected to sample_mflix'))
-.catch(err => {
-  console.error('MongoDB connection error:', err);
-  process.exit(1);
-});
+.then(() => console.log('MongoDB connected to', mongoose.connection.name))
+.catch(err => console.error('MongoDB connection error:', err));
 
 // Admin routes
 app.get('/admin/engagements', async (req, res) => {
