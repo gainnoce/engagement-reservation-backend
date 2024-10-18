@@ -25,7 +25,10 @@ mongoose.connect(process.env.MONGODB_URI, {
     wtimeout: 1000
   }
 })
-.then(() => console.log('MongoDB connected to', mongoose.connection.name))
+.then(() => {
+  console.log('MongoDB connected to', mongoose.connection.name);
+  console.log('Connected to database:', mongoose.connection.db.databaseName);
+})
 .catch(err => console.error('MongoDB connection error:', err));
 
 // Welcome route
@@ -41,8 +44,10 @@ app.get('/test', (req, res) => {
 // Get all engagement requests
 app.get('/api/engagement-requests', async (req, res) => {
   try {
+    console.log('Fetching engagement requests...');
     const requests = await EngagementRequest.find();
-    console.log('Retrieved all engagement requests:', requests);
+    console.log('Number of requests found:', requests.length);
+    console.log('Requests:', JSON.stringify(requests, null, 2));
     res.json(requests);
   } catch (error) {
     console.error('Error retrieving engagement requests:', error);
@@ -57,7 +62,8 @@ app.post('/api/engagement-requests', async (req, res) => {
     const request = new EngagementRequest(req.body);
     console.log('Attempting to save request to database...');
     const newRequest = await request.save();
-    console.log('Request saved successfully:', JSON.stringify(newRequest, null, 2));
+    console.log('Request saved successfully. ID:', newRequest._id);
+    console.log('Saved request:', JSON.stringify(newRequest, null, 2));
     res.status(201).json(newRequest);
   } catch (error) {
     console.error('Error processing request:', error);
