@@ -1,42 +1,38 @@
 const mongoose = require('mongoose');
 
 const ExpertSchema = new mongoose.Schema({
-  firstName: String,
-  lastName: String,
+  name: String,
   email: String,
-  address: String,
+  street: String,
   city: String,
   stateProvince: String,
   country: String,
   zipCode: String,
   specialty: String,
-  rationale: String,
+  rationale: {
+    text: String,
+    extensiveExperience: Boolean,
+    currentResearch: Boolean,
+    recentPublications: Boolean
+  },
   ltcServiceAgreement: String,
   travelRequired: Boolean,
   engageAccountActive: Boolean
 });
 
 const EngagementRequestSchema = new mongoose.Schema({
-  submittedBy: {
-    name: String,
-    email: String
-  },
-  activityOwner: {
-    name: String,
-    email: String
+  businessUnit: String,
+  submittingOnBehalfOfOthers: Boolean,
+  additionalInfo: {
+    requestorName: String,
+    requestorEmail: String,
+    activityOwnerName: String,
+    activityOwnerEmail: String,
+    businessUnit: String
   },
   isPostEngagement: Boolean,
   experts: [ExpertSchema],
-  engagementDate: Date,
-  status: {
-    type: String,
-    enum: ['Pending', 'In Progress', 'Completed'],
-    default: 'Pending'
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
+  engagementDate: Date
 });
 
 module.exports = mongoose.model('EngagementRequest', EngagementRequestSchema);
