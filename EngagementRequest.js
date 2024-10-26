@@ -32,7 +32,15 @@ const EngagementRequestSchema = new mongoose.Schema({
   },
   isPostEngagement: Boolean,
   experts: [ExpertSchema],
-  engagementDate: Date
+  engagementDate: Date,
+  // Add these new fields
+  engagementNumber: String,
+  engagementName: String,
+  status: {
+    type: String,
+    enum: ['Pending', 'In Progress', 'Completed'],
+    default: 'Pending'
+  }
 });
 
 module.exports = mongoose.model('EngagementRequest', EngagementRequestSchema);
