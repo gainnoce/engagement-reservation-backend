@@ -44,15 +44,21 @@ app.use((req, res, next) => {
 
 // Welcome route
 app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to the Expert Engagement Reservation System API' });
+  res.json({ 
+    message: 'Welcome to the Expert Engagement Reservation System API',
+    endpoints: {
+      test: '/api/test',
+      engagements: '/api/engagement-requests'
+    }
+  });
 });
 
-// Test route
-app.get('/test', (req, res) => {
-  res.json({ message: 'Test route working' });
+// Test route - moved under /api prefix
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'API Test route working' });
 });
 
-// Get all engagement requests
+// Routes for engagement requests
 app.get('/api/engagement-requests', async (req, res) => {
   try {
     console.log('Fetching engagement requests...');
@@ -65,7 +71,6 @@ app.get('/api/engagement-requests', async (req, res) => {
   }
 });
 
-// Get specific engagement request
 app.get('/api/engagement-requests/:id', async (req, res) => {
   try {
     console.log('Fetching engagement request:', req.params.id);
@@ -80,7 +85,6 @@ app.get('/api/engagement-requests/:id', async (req, res) => {
   }
 });
 
-// Create a new engagement request
 app.post('/api/engagement-requests', async (req, res) => {
   try {
     console.log('Received engagement request:', req.body);
@@ -94,11 +98,14 @@ app.post('/api/engagement-requests', async (req, res) => {
   }
 });
 
-// Update an engagement request
 app.put('/api/engagement-requests/:id', async (req, res) => {
   try {
     console.log('Update request received for ID:', req.params.id);
     console.log('Update data:', req.body);
+
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid engagement ID format' });
+    }
 
     const updatedRequest = await EngagementRequest.findByIdAndUpdate(
       req.params.id,
@@ -119,7 +126,7 @@ app.put('/api/engagement-requests/:id', async (req, res) => {
 });
 
 // Admin routes
-app.get('/admin/engagements', async (req, res) => {
+app.get('/api/admin/engagements', async (req, res) => {
   try {
     const engagements = await EngagementRequest.find();
     res.json(engagements);
@@ -141,4 +148,11 @@ app.use((req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log('Available routes:');
+  console.log('- GET  /');
+  console.log('- GET  /api/test');
+  console.log('- GET  /api/engagement-requests');
+  console.log('- POST /api/engagement-requests');
+  console.log('- GET  /api/engagement-requests/:id');
+  console.log('- PUT  /api/engagement-requests/:id');
 });
