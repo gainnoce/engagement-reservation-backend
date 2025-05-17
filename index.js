@@ -163,6 +163,12 @@ app.use((req, res, next) => {
 setupFeatureFlagRoutes(app);
 
 // 7. DATABASE CONNECTION
+console.log('Environment variables:', {
+  NODE_ENV: process.env.NODE_ENV,
+  MONGODB_URI_EXISTS: !!process.env.MONGODB_URI,
+  MONGODB_URI_PREFIX: process.env.MONGODB_URI?.substring(0, 20) + '...',
+});
+
 mongoose
   .connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
