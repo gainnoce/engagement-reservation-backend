@@ -1,6 +1,7 @@
 {
   "name": "engagement-backend",
   "version": "1.0.0",
+  "description": "Backend for Expert Engagement Reservation System",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",

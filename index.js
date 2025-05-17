@@ -286,6 +286,59 @@ app.get("/test-admin", (req, res) => {
     if (err) {
       console.error("Error sending admin file:", err);
       res.status(500).send("Error loading admin page");
+=======
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+require('dotenv').config();
+const EngagementRequest = require('./EngagementRequest');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// MongoDB Connection
+if (!process.env.MONGODB_URI) {
+  console.error('MONGODB_URI is not set in the environment variables');
+  process.exit(1);
+}
+
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  writeConcern: {
+    w: 'majority',
+    j: true,
+    wtimeout: 1000
+  }
+})
+.then(() => {
+  console.log('MongoDB connected to', mongoose.connection.name);
+  console.log('Connected to database:', mongoose.connection.db.databaseName);
+})
+.catch(err => console.error('MongoDB connection error:', err));
+
+// Debug logging middleware
+app.use((req, res, next) => {
+  console.log('Request received:', {
+    method: req.method,
+    path: req.url,
+    body: req.body
+  });
+  next();
+});
+
+// Welcome route
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Welcome to the Expert Engagement Reservation System API',
+    endpoints: {
+      test: '/api/test',
+      engagements: '/api/engagement-requests'
+>>>>>>> ac33afc350064245bc645b029b18f159c88266c9
     }
   });
 });
