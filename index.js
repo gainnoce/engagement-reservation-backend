@@ -50,8 +50,45 @@ const store = new MongoDBStore({
   ttl: 24 * 60 * 60, // 24 hours
   connectionOptions: {
     useNewUrlParser: true,
-    useUnifiedTopology: true
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000, // 5 seconds timeout
+    socketTimeoutMS: 45000, // 45 seconds timeout
+    connectTimeoutMS: 5000, // 5 seconds timeout
+    keepAlive: true,
+    keepAliveInitialDelay: 300000 // 5 minutes
   }
+});
+
+// Add session store connection handling
+store.on('connection', () => {
+  console.log('MongoDB session store connected');
+});
+
+store.on('disconnection', () => {
+  console.log('MongoDB session store disconnected');
+});
+
+store.on('error', (error) => {
+  console.error('MongoDB session store error:', error);
+});
+
+// Add session store ready check middleware
+app.use((req, res, next) => {
+  if (!store.isReady) {
+    console.error('Session store not ready');
+    return res.status(503).send('Service Unavailable - Session store not ready');
+  }
+  next();
+});
+
+// Add session store cleanup
+process.on('SIGINT', () => {
+  store.disconnect();
+  process.exit(0);
+});
+process.on('SIGTERM', () => {
+  store.disconnect();
+  process.exit(0);
 });
 
 // Add detailed MongoDB connection logging
@@ -122,8 +159,19 @@ app.use(session({
   rolling: true,
   genid: function(req) {
     return require('crypto').randomBytes(24).toString('hex');
-  }
+  },
+  saveUninitialized: false,
+  resave: false
 }));
+
+// Add session initialization middleware
+app.use((req, res, next) => {
+  // Initialize session if it doesn't exist
+  if (!req.session) {
+    req.session = {};
+  }
+  next();
+});
 
 // Add session cleanup middleware
 app.use((req, res, next) => {
