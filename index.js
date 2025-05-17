@@ -46,8 +46,39 @@ const store = new MongoDBStore({
   databaseName: 'engagement_system',
   expires: 24 * 60 * 60 * 1000, // 24 hours
   autoRemove: 'native',
-  autoRemoveInterval: 10 // In minutes
+  autoRemoveInterval: 10, // In minutes
+  ttl: 24 * 60 * 60, // 24 hours
+  connectionOptions: {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  }
 });
+
+// Add detailed MongoDB connection logging
+store.on('connection', () => {
+  console.log('MongoDB session store connected');
+  console.log('MongoDB URI:', process.env.MONGODB_URI);
+});
+
+store.on('disconnection', () => {
+  console.log('MongoDB session store disconnected');
+});
+
+store.on('error', (error) => {
+  console.error('MongoDB session store error:', error);
+});
+
+// Log session store stats
+setInterval(() => {
+  store.all((err, sessions) => {
+    if (err) {
+      console.error('Error getting sessions:', err);
+      return;
+    }
+    console.log('Current sessions count:', sessions.length);
+    console.log('Sessions:', sessions);
+  });
+}, 60000); // Every minute
 
 // Catch errors
 store.on('error', function(error) {
@@ -74,7 +105,7 @@ setInterval(() => {
 app.use(session({
   store: store,
   secret: process.env.SESSION_SECRET || 'your-secret-key',
-  resave: false,
+  resave: true,
   saveUninitialized: false,
   cookie: {
     secure: true,
@@ -85,8 +116,24 @@ app.use(session({
     path: '/',
     secure: true
   },
-  name: 'engagement-session'
+  name: 'engagement-session',
+  rolling: true,
+  proxy: true
 }));
+
+// Add session save middleware
+app.use((req, res, next) => {
+  if (req.session && req.session.isAuthenticated) {
+    req.session.save(err => {
+      if (err) {
+        console.error('Error saving session:', err);
+      }
+      next();
+    });
+  } else {
+    next();
+  }
+});
 
 // Add session save middleware
 app.use((req, res, next) => {
