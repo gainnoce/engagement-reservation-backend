@@ -114,33 +114,33 @@ app.use(session({
     sameSite: 'lax',
     domain: '.onrender.com',
     path: '/',
-    secure: true
+    secure: true,
+    proxy: true
   },
   name: 'engagement-session',
   rolling: true,
-  proxy: true,
   genid: function(req) {
     return require('crypto').randomBytes(24).toString('hex');
   }
 }));
 
 // Add CORS middleware
-const cors = require('cors');
+// Update CORS configuration
 app.use(cors({
   origin: ['https://your-render-app.onrender.com'],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Access-Control-Request-Method', 'Access-Control-Request-Headers']
 }));
 
-// Add explicit cookie handling middleware
+// Add explicit session handling middleware
 app.use((req, res, next) => {
-  if (req.cookies['engagement-session']) {
-    req.sessionID = req.cookies['engagement-session'];
+  // Force session initialization
+  if (!req.session) {
+    req.session = {};
   }
-  next();
-});
-
-// Add session save middleware
-app.use((req, res, next) => {
+  
+  // Save session on every request if authenticated
   if (req.session && req.session.isAuthenticated) {
     req.session.save(err => {
       if (err) {
@@ -151,6 +151,22 @@ app.use((req, res, next) => {
   } else {
     next();
   }
+});
+
+// Add cookie handling middleware
+app.use((req, res, next) => {
+  // Set session cookie explicitly
+  if (req.session && req.session.isAuthenticated) {
+    res.cookie('engagement-session', req.sessionID, {
+      secure: true,
+      httpOnly: true,
+      sameSite: 'lax',
+      domain: '.onrender.com',
+      path: '/',
+      maxAge: 24 * 60 * 60 * 1000
+    });
+  }
+  next();
 });
 
 // Add session save middleware
