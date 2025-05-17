@@ -42,7 +42,12 @@ const MongoDBStore = require('connect-mongodb-session')(session);
 // Create a MongoDB session store
 const store = new MongoDBStore({
   uri: process.env.MONGODB_URI,
-  collection: 'sessions'
+  collection: 'sessions',
+  databaseName: 'engagement_system',
+  expires: 24 * 60 * 60 * 1000, // 24 hours
+  autoRemove: 'native',
+  autoRemoveInterval: 10, // In minutes. Default
+  ttl: 24 * 60 * 60 // = 1 day
 });
 
 // Catch errors
@@ -50,20 +55,55 @@ store.on('error', function(error) {
   console.error('MongoDB session store error:', error);
 });
 
+// Check if MongoDB is properly connected
+store.on('ready', function() {
+  console.log('MongoDB session store ready');
+});
+
+// Force cleanup of expired sessions
+store.cleanup();
+
+// Log session store stats
+setInterval(() => {
+  store.all((err, sessions) => {
+    if (err) {
+      console.error('Error getting sessions:', err);
+      return;
+    }
+    console.log('Current sessions count:', sessions.length);
+  });
+}, 60000); // Every minute
+
 // Session setup
 app.use(session({
   store: store,
   secret: process.env.SESSION_SECRET || 'your-secret-key',
-  resave: false,
-  saveUninitialized: true,
+  resave: true,
+  saveUninitialized: false,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     httpOnly: true,
-    sameSite: 'lax'
+    sameSite: 'lax',
+    domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
   },
-  name: 'engagement-session'
+  name: 'engagement-session',
+  rolling: true
 }));
+
+// Add session save middleware
+app.use((req, res, next) => {
+  if (req.session && req.session.isAuthenticated) {
+    req.session.save(err => {
+      if (err) {
+        console.error('Error saving session:', err);
+      }
+      next();
+    });
+  } else {
+    next();
+  }
+});
 
 // Add session save middleware to ensure sessions are saved after each request
 app.use((req, res, next) => {
