@@ -46,22 +46,13 @@ const store = new MongoDBStore({
   databaseName: 'engagement_system',
   expires: 24 * 60 * 60 * 1000, // 24 hours
   autoRemove: 'native',
-  autoRemoveInterval: 10, // In minutes
-  ttl: 24 * 60 * 60, // 24 hours
-  connectionOptions: {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 5000, // 5 seconds timeout
-    socketTimeoutMS: 45000, // 45 seconds timeout
-    connectTimeoutMS: 5000, // 5 seconds timeout
-    keepAlive: true,
-    keepAliveInitialDelay: 300000 // 5 minutes
-  }
+  autoRemoveInterval: 10 // In minutes
 });
 
 // Add session store connection handling
 store.on('connection', () => {
   console.log('MongoDB session store connected');
+  console.log('MongoDB URI:', process.env.MONGODB_URI);
 });
 
 store.on('disconnection', () => {
@@ -72,15 +63,6 @@ store.on('error', (error) => {
   console.error('MongoDB session store error:', error);
 });
 
-// Add session store ready check middleware
-app.use((req, res, next) => {
-  if (!store.isReady) {
-    console.error('Session store not ready');
-    return res.status(503).send('Service Unavailable - Session store not ready');
-  }
-  next();
-});
-
 // Add session store cleanup
 process.on('SIGINT', () => {
   store.disconnect();
@@ -89,6 +71,22 @@ process.on('SIGINT', () => {
 process.on('SIGTERM', () => {
   store.disconnect();
   process.exit(0);
+});
+
+// Add error logging middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err.stack);
+  res.status(500).send('Something broke!');
+});
+
+// Add request logging
+app.use((req, res, next) => {
+  console.log(`\n=== Request ===`);
+  console.log('Method:', req.method);
+  console.log('Path:', req.path);
+  console.log('Headers:', req.headers);
+  console.log('Body:', req.body);
+  next();
 });
 
 // Add detailed MongoDB connection logging
@@ -152,17 +150,32 @@ app.use(session({
     domain: '.onrender.com',
     path: '/',
     secure: true,
-    proxy: true,
-    signed: true
+    proxy: true
   },
-  name: 'engagement-session',
-  rolling: true,
-  genid: function(req) {
-    return require('crypto').randomBytes(24).toString('hex');
-  },
-  saveUninitialized: false,
-  resave: false
+  name: 'engagement-session'
 }));
+
+// Add session initialization middleware
+app.use((req, res, next) => {
+  if (!req.session) {
+    req.session = {};
+  }
+  next();
+});
+
+// Add session save middleware
+app.use((req, res, next) => {
+  if (req.session && req.session.isAuthenticated) {
+    req.session.save(err => {
+      if (err) {
+        console.error('Error saving session:', err);
+      }
+      next();
+    });
+  } else {
+    next();
+  }
+});
 
 // Add session initialization middleware
 app.use((req, res, next) => {
