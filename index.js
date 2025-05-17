@@ -105,8 +105,8 @@ setInterval(() => {
 app.use(session({
   store: store,
   secret: process.env.SESSION_SECRET || 'your-secret-key',
-  resave: true,
-  saveUninitialized: true,
+  resave: false,
+  saveUninitialized: false,
   cookie: {
     secure: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
@@ -115,7 +115,8 @@ app.use(session({
     domain: '.onrender.com',
     path: '/',
     secure: true,
-    proxy: true
+    proxy: true,
+    signed: true
   },
   name: 'engagement-session',
   rolling: true,
@@ -124,10 +125,70 @@ app.use(session({
   }
 }));
 
+// Add session cleanup middleware
+app.use((req, res, next) => {
+  // Clean up old sessions
+  if (req.session) {
+    if (req.session.cookie.maxAge) {
+      req.session.cookie.expires = new Date(Date.now() + req.session.cookie.maxAge);
+    }
+    if (!req.session.isAuthenticated) {
+      // Destroy session if not authenticated
+      req.session.destroy();
+    }
+  }
+  next();
+});
+
+// Add session force initialization middleware
+app.use((req, res, next) => {
+  // Force session initialization if it doesn't exist
+  if (!req.session) {
+    req.session = {};
+  }
+  next();
+});
+
+// Add explicit cookie handling middleware
+app.use((req, res, next) => {
+  // Set session cookie explicitly if authenticated
+  if (req.session && req.session.isAuthenticated) {
+    res.cookie('engagement-session', req.sessionID, {
+      secure: true,
+      httpOnly: true,
+      sameSite: 'lax',
+      domain: '.onrender.com',
+      path: '/',
+      maxAge: 24 * 60 * 60 * 1000,
+      signed: true
+    });
+  }
+  next();
+});
+
+// Add session save middleware
+app.use((req, res, next) => {
+  // Save session only if authenticated
+  if (req.session && req.session.isAuthenticated) {
+    req.session.save(err => {
+      if (err) {
+        console.error('Error saving session:', err);
+      }
+      next();
+    });
+  } else {
+    next();
+  }
+});
+
 // Add CORS middleware
 // Update CORS configuration
+const origin = process.env.NODE_ENV === 'production' ? 
+  'https://your-render-app.onrender.com' : 
+  'http://localhost:3000';
+
 app.use(cors({
-  origin: ['https://your-render-app.onrender.com'],
+  origin: origin,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Access-Control-Request-Method', 'Access-Control-Request-Headers']
