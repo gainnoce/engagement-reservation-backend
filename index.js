@@ -46,8 +46,7 @@ const store = new MongoDBStore({
   databaseName: 'engagement_system',
   expires: 24 * 60 * 60 * 1000, // 24 hours
   autoRemove: 'native',
-  autoRemoveInterval: 10, // In minutes. Default
-  ttl: 24 * 60 * 60 // = 1 day
+  autoRemoveInterval: 10 // In minutes
 });
 
 // Catch errors
@@ -59,9 +58,6 @@ store.on('error', function(error) {
 store.on('ready', function() {
   console.log('MongoDB session store ready');
 });
-
-// Force cleanup of expired sessions
-store.cleanup();
 
 // Log session store stats
 setInterval(() => {
