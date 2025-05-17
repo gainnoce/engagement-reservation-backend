@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Engagement Details</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <nav>
+      <div class="nav-left">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/calendar-rules">Calendar Rules</a>
+        <a href="/feature-flags">Feature Flags</a>
+      </div>
+      <div class="nav-right">
+        <div class="role-selector">
+          <select id="roleSelect" onchange="switchRole(this.value)">
+            <option value="coordinator">Engagement Coordinator View</option>
+            <option value="manager">Manager View</option>
+            <option value="activityOwner">Activity Owner View</option>
+          </select>
+        </div>
+        <a href="/settings" class="settings-link">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </a>
+        <a href="/logout">Logout</a>
+      </div>
+    </nav>
+
+    <div class="container">
+      <h1>Engagement Details</h1>
+      <div id="engagementInfo"></div>
+
+      <h2>Experts</h2>
+      <table id="expertsTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>MDM ID</th>
+            <th>Address</th>
+            <th>Specialty</th>
+            <th>Rationale</th>
+            <th>Associated to HCO/Institution?</th>
+            <th>Emailed Expert to Confirm?</th>
+            <th>Government Official?</th>
+            <th>Expert FMV Rate</th>
+            <th>Contract Status</th>
+            <th>Payee Information</th>
+          </tr>
+        </thead>
+        <tbody id="expertsList"></tbody>
+      </table>
+
+      <button onclick="saveChanges()">Save Changes</button>
+
+      <script>
+        let engagementData;
+
+        function getEngagementId() {
+          return window.location.pathname.split("/").pop();
+        }
+
+        function fetchEngagementDetails() {
+          const id = getEngagementId();
+          fetch(`/api/engagement-requests/${id}`)
+            .then((response) => response.json())
+            .then((data) => {
+              engagementData = data;
+              displayEngagementInfo(data);
+              displayExperts(data.experts);
+            })
+            .catch((error) => console.error("Error:", error));
+        }
+
+        function displayEngagementInfo(data) {
+          const infoDiv = document.getElementById("engagementInfo");
+          infoDiv.innerHTML = `
+            <p><strong>System Created Request Number:</strong> ${data._id}</p>
+            <p><strong>Engagement Number:</strong> <input type="text" id="engagementNumber" value="${
+              data.engagementNumber || ""
+            }"></p>
+            <p><strong>Engagement Name:</strong> <input type="text" id="engagementName" value="${
+              data.engagementName || ""
+            }"></p>
+            <p><strong>Date of Engagement:</strong> ${new Date(
+              data.engagementDate
+            ).toLocaleDateString()}</p>
+            <p><strong>Number of Experts:</strong> ${data.experts.length}</p>
+            <p><strong>Activity Owner Name:</strong> ${
+              data.additionalInfo.activityOwnerName
+            }</p>
+            <p><strong>Activity Owner Email:</strong> ${
+              data.additionalInfo.activityOwnerEmail
+            }</p>
+            <p><strong>Business Unit:</strong> ${data.businessUnit}</p>
+            <p><strong>Long-Term Agreement:</strong> ${
+              data.isLongTermAgreement ? "Yes" : "No"
+            }</p>
+          `;
+        }
+
+        function displayExperts(experts) {
+          const expertsList = document.getElementById("expertsList");
+          expertsList.innerHTML = experts
+            .map(
+              (expert, index) => `
+            <tr>
+              <td>${expert.name || "N/A"}</td>
+              <td>${expert.email || "N/A"}</td>
+              <td><input type="text" id="mdmId_${index}" value="${
+                expert.mdmId || ""
+              }"></td>
+              <td>${expert.street || ""} ${expert.city || ""} ${
+                expert.stateProvince || ""
+              } ${expert.country || ""} ${expert.zipCode || ""}</td>
+              <td>${expert.specialty || "N/A"}</td>
+              <td>${JSON.stringify(expert.rationale) || "N/A"}</td>
+              <td>
+                <select id="associatedToHCO_${index}">
+                  <option value="true" ${
+                    expert.associatedToHCO ? "selected" : ""
+                  }>Yes</option>
+                  <option value="false" ${
+                    !expert.associatedToHCO ? "selected" : ""
+                  }>No</option>
+                </select>
+              </td>
+              <td>
+                <select id="emailedToConfirm_${index}">
+                  <option value="true" ${
+                    expert.emailedToConfirm ? "selected" : ""
+                  }>Yes</option>
+                  <option value="false" ${
+                    !expert.emailedToConfirm ? "selected" : ""
+                  }>No</option>
+                </select>
+              </td>
+              <td>
+                <select id="isGovernmentOfficial_${index}">
+                  <option value="true" ${
+                    expert.isGovernmentOfficial ? "selected" : ""
+                  }>Yes</option>
+                  <option value="false" ${
+                    !expert.isGovernmentOfficial ? "selected" : ""
+                  }>No</option>
+                </select>
+              </td>
+              <td>
+                <input type="number" id="fmvRate_${index}" value="${
+                expert.fmvRate || 0
+              }">
+                <input type="text" id="fmvCurrency_${index}" value="${
+                expert.fmvCurrency || "USD"
+              }" style="width: 50px;">
+                <select id="fmvType_${index}">
+                  <option value="hourly" ${
+                    expert.fmvType === "hourly" ? "selected" : ""
+                  }>/ Hour</option>
+                  <option value="fixed" ${
+                    expert.fmvType === "fixed" ? "selected" : ""
+                  }>/ Engagement</option>
+                  <option value="uncompensated" ${
+                    expert.fmvType === "uncompensated" ? "selected" : ""
+                  }>Uncompensated</option>
+                </select>
+              </td>
+              <td>
+                <select id="contractStatus_${index}">
+                  <option ${
+                    expert.contractStatus === "No Draft" ? "selected" : ""
+                  }>No Draft</option>
+                  <option ${
+                    expert.contractStatus === "Drafted" ? "selected" : ""
+                  }>Drafted</option>
+                  <option ${
+                    expert.contractStatus === "Pending Internal Review"
+                      ? "selected"
+                      : ""
+                  }>Pending Internal Review</option>
+                  <option ${
+                    expert.contractStatus === "Pending NomSig Approval"
+                      ? "selected"
+                      : ""
+                  }>Pending NomSig Approval</option>
+                  <option ${
+                    expert.contractStatus === "Pending AO Review"
+                      ? "selected"
+                      : ""
+                  }>Pending AO Review</option>
+                  <option ${
+                    expert.contractStatus === "Pending Expert Review"
+                      ? "selected"
+                      : ""
+                  }>Pending Expert Review</option>
+                  <option ${
+                    expert.contractStatus === "Pending Institutional Review"
+                      ? "selected"
+                      : ""
+                  }>Pending Institutional Review</option>
+                  <option ${
+                    expert.contractStatus === "Executed" ? "selected" : ""
+                  }>Executed</option>
+                  <option ${
+                    expert.contractStatus === "Cancelled" ? "selected" : ""
+                  }>Cancelled</option>
+                  <option ${
+                    expert.contractStatus === "Unexecuted" ? "selected" : ""
+                  }>Unexecuted</option>
+                </select>
+              </td>
+              <td>
+                <input type="text" id="payeeLastFourDigits_${index}" value="${
+                expert.payeeLastFourDigits || ""
+              }" maxlength="4" style="width: 50px;">
+                <input type="text" id="payeeNumber_${index}" value="${
+                expert.payeeNumber || ""
+              }" style="width: 100px;">
+              </td>
+            </tr>
+          `
+            )
+            .join("");
+        }
+
+        function saveChanges() {
+          // Implement save changes functionality here
+          console.log("Save changes clicked");
+        }
+
+        fetchEngagementDetails();
+      </script>
+    </div>
+  </body>
+</html>

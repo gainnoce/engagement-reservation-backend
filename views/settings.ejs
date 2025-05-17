@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Settings - Expert Engagement System</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+    <script src="/js/role-ui.js" defer></script>
+    <!-- Add toast notification library -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/toastify-js/1.12.0/toastify.min.css"
+    />
+</head>
+<body>
+    <% try { %>
+    <script>
+          console.log('Template Debug Data:', {
+        hasAllCountries: typeof <%= typeof allCountries !== 'undefined' %>,
+        allCountries: <%- JSON.stringify(typeof allCountries !== 'undefined' ? allCountries : []) %>,
+        nomsigCountries: <%- JSON.stringify(typeof nomsigCountries !== 'undefined' ? nomsigCountries : []) %>,
+        countryRules: <%- JSON.stringify(typeof countryRules !== 'undefined' ? countryRules : {}) %>,
+        features: <%- JSON.stringify(typeof features !== 'undefined' ? features : {}) %>,
+        userRole: <%- JSON.stringify(typeof userRole !== 'undefined' ? userRole : null) %>
+      });
+    </script>
+    <nav>
+        <div class="nav-left">
+            <a href="/dashboard">Dashboard</a>
+            <% if (locals.features && features.calendarRules === true) { %>
+                <a href="/calendar-rules">Calendar Rules</a>
+            <% } %>
+        </div>
+        <div class="nav-right">
+            <% if (locals.features && features.userRoleSystem === true) { %>
+                <div class="role-selector">
+                    <select id="roleSelect" onchange="switchRole(this.value)">
+                        <option value="coordinator">Engagement Coordinator View</option>
+                        <option value="manager">Manager View</option>
+                        <option value="activityOwner">Activity Owner View</option>
+                    </select>
+                </div>
+            <% } %>
+            <% if (userRole === 'Manager') { %>
+                <a href="/calendar-rules" class="nav-button">Calendar Rules</a>
+                <a href="/my-team" class="nav-button">My Team</a>
+            <% } %>
+            <a href="/settings" class="settings-link active">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+            </a>
+            <a href="/logout">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>System Settings</h1>
+
+        <script>
+              console.log('Template Debug Data:', {
+          allCountries: <%- typeof allCountries !== 'undefined' ? JSON.stringify(allCountries) : '[]' %>,
+          nomsigCountries: <%- typeof nomsigCountries !== 'undefined' ? JSON.stringify(nomsigCountries) : '[]' %>,
+          countryRules: <%- typeof countryRules !== 'undefined' ? JSON.stringify(countryRules) : '{}' %>,
+          features: <%- typeof features !== 'undefined' ? JSON.stringify(features) : '{}' %>,
+          userRole: <%- typeof userRole !== 'undefined' ? JSON.stringify(userRole) : 'null' %>
+        });
+      </script>
+
+      <div class="table-controls">
+        <div class="search-box">
+          <input
+            type="text"
+            id="countrySearch"
+            placeholder="Search countries..."
+            onkeyup="filterCountries()"
+          />
+        </div>
+        <div class="sort-controls">
+          <button onclick="sortCountries('name')" class="btn btn-sm">
+            Sort by Name
+          </button>
+          <button onclick="sortCountries('blockDays')" class="btn btn-sm">
+            Sort by Block Days
+          </button>
+        </div>
+      </div>
+
+      <!-- Add New Country Modal -->
+      <div id="addCountryModal" class="modal">
+        <div class="modal-content">
+          <h2>Add New Country</h2>
+          <form id="addCountryForm" onsubmit="handleAddCountry(event)">
+            <div class="form-group">
+              <label>Country Name:</label>
+              <input type="text" id="newCountryName" required />
+            </div>
+            <div class="form-group">
+              <label>NomSig Required:</label>
+              <input type="checkbox" id="newCountryNomSig" />
+            </div>
+            <div class="form-group">
+              <label>Calendar Block Days:</label>
+              <input
+                type="number"
+                id="newCountryBlockDays"
+                min="0"
+                value="0"
+                required
+              />
+            </div>
+            <div class="modal-buttons">
+              <button type="submit" class="btn-primary">Add Country</button>
+              <button
+                type="button"
+                class="btn-secondary"
+                onclick="closeModal()"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="section-header">
+          <h2>Country Management</h2>
+          <button onclick="openModal()" class="add-btn">Add New Country</button>
+        </div>
+
+        <div class="table-controls">
+          <div class="search-box">
+            <input
+              type="text"
+              id="countrySearch"
+              placeholder="Search countries..."
+              onkeyup="filterCountries()"
+              class="search-input"
+            />
+          </div>
+          <div class="sort-controls">
+            <button onclick="sortCountries('name')" class="btn btn-sm">
+              Sort by Name
+            </button>
+            <button onclick="sortCountries('blockDays')" class="btn btn-sm">
+              Sort by Block Days
+            </button>
+          </div>
+        </div>
+
+        <div class="country-settings">
+          <table class="country-table">
+            <thead>
+              <tr>
+                <th>Country</th>
+                <th>NomSig Required</th>
+                <th>Calendar Block Days</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (!allCountries || allCountries.length === 0) { %>
+              <tr>
+                <td colspan="4">No countries configured</td>
+              </tr>
+              <% } else { %> <% allCountries.forEach(function(country) { %>
+              <tr>
+                <td><%= country %></td>
+                <td>
+                  <label class="toggle-switch">
+                    <input type="checkbox" <%= nomsigCountries &&
+                    nomsigCountries.includes(country) ? 'checked' : '' %>
+                    onchange="updateNomSigCountry('<%= country %>',
+                    this.checked)" >
+                    <span class="toggle-slider"></span>
+                  </label>
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    class="block-days-input"
+                    value="<%= countryRules && countryRules[country] ? countryRules[country] : 0 %>"
+                    min="0"
+                    onchange="updateCalendarRule('<%= country %>', this.value)"
+                    oninput="validateNumber(this)"
+                  />
+                </td>
+                <td class="actions-cell">
+                  <button
+                    onclick="resetCountrySettings('<%= country %>')"
+                    class="reset-btn"
+                  >
+                    Reset
+                  </button>
+                  <button
+                    onclick="deleteCountry('<%= country %>')"
+                    class="delete-btn"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+              <% }); %> <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h2>Role Management</h2>
+        <div class="role-settings">
+          <table class="role-table">
+            <thead>
+              <tr>
+                <th>Role</th>
+                <th>Settings Access</th>
+                <th>Calendar Rules Access</th>
+                <th>Contract Management</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Engagement Coordinator</td>
+                <td><input type="checkbox" checked disabled /></td>
+                <td><input type="checkbox" checked disabled /></td>
+                <td><input type="checkbox" checked disabled /></td>
+              </tr>
+              <tr>
+                <td>Manager</td>
+                <td><input type="checkbox" checked disabled /></td>
+                <td><input type="checkbox" checked disabled /></td>
+                <td><input type="checkbox" checked disabled /></td>
+              </tr>
+              <tr>
+                <td>Activity Owner</td>
+                <td><input type="checkbox" disabled /></td>
+                <td><input type="checkbox" disabled /></td>
+                <td><input type="checkbox" checked disabled /></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastify-js/1.12.0/toastify.js"></script>
+    <script>
+      // Validation for numbers
+      function validateNumber(input) {
+        if (input.value < 0) input.value = 0;
+      }
+
+      // Toast notification helper
+      function showNotification(message, type = "success") {
+        Toastify({
+          text: message,
+          duration: 3000,
+          gravity: "top",
+          position: "right",
+          backgroundColor: type === "success" ? "#48bb78" : "#f56565",
+        }).showToast();
+      }
+
+      // Modal handlers
+      function openModal() {
+        document.getElementById("addCountryModal").style.display = "block";
+      }
+
+      function closeModal() {
+        document.getElementById("addCountryModal").style.display = "none";
+      }
+
+      // Role view switching
+      function switchView(role) {
+        // Store the selected role
+        localStorage.setItem("selectedRole", role);
+        // Reload the page to update permissions
+        location.reload();
+      }
+
+      async function updateNomSigCountry(country, enabled) {
+        if (
+          !confirm(
+            `Are you sure you want to ${
+              enabled ? "enable" : "disable"
+            } NomSig for ${country}?`
+          )
+        )
+          return;
+        try {
+          const response = await fetch("/api/settings/nomsig-countries", {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ country, enabled }),
+          });
+
+          if (!response.ok) throw new Error("Failed to update NomSig settings");
+          showNotification(`Updated NomSig requirement for ${country}`);
+        } catch (error) {
+          console.error("Error updating settings:", error);
+          showNotification("Failed to update settings", "error");
+        }
+      }
+
+      async function updateCalendarRule(country, days) {
+        try {
+          const response = await fetch("/api/settings/calendar-rules", {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ country, days: parseInt(days) }),
+          });
+
+          if (!response.ok) throw new Error("Failed to update calendar rules");
+          showNotification(`Updated calendar rules for ${country}`);
+        } catch (error) {
+          console.error("Error updating calendar rules:", error);
+          showNotification("Failed to update calendar rules", "error");
+        }
+      }
+
+      async function resetCountrySettings(country) {
+        if (
+          confirm(`Are you sure you want to reset all settings for ${country}?`)
+        ) {
+          try {
+            const response = await fetch(
+              `/api/settings/country-reset/${country}`,
+              {
+                method: "POST",
+              }
+            );
+
+            if (!response.ok)
+              throw new Error("Failed to reset country settings");
+            location.reload();
+          } catch (error) {
+            console.error("Error resetting settings:", error);
+            showNotification("Failed to reset settings", "error");
+          }
+        }
+      }
+
+      // Add this to your settings.ejs script section
+      async function handleAddCountry(event) {
+        event.preventDefault();
+        const countryName = document.getElementById("newCountryName").value;
+        const nomSigRequired =
+          document.getElementById("newCountryNomSig").checked;
+        const blockDays = parseInt(
+          document.getElementById("newCountryBlockDays").value
+        );
+
+        try {
+          const response = await fetch("/api/settings/add-country", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              country: countryName,
+              nomSigRequired,
+              blockDays,
+            }),
+          });
+
+          if (!response.ok) throw new Error("Failed to add country");
+          showNotification(`Successfully added ${countryName}`);
+          closeModal();
+          location.reload(); // Refresh to show new country
+        } catch (error) {
+          console.error("Error:", error);
+          showNotification("Failed to add country", "error");
+        }
+      }
+
+      async function deleteCountry(country) {
+        if (
+          !confirm(
+            `Are you sure you want to delete ${country}? This cannot be undone.`
+          )
+        )
+          return;
+
+        try {
+          const response = await fetch(
+            `/api/settings/delete-country/${country}`,
+            {
+              method: "DELETE",
+            }
+          );
+
+          if (!response.ok) throw new Error("Failed to delete country");
+          showNotification(`Successfully deleted ${country}`);
+          location.reload(); // Refresh to remove country
+        } catch (error) {
+          console.error("Error:", error);
+          showNotification("Failed to delete country", "error");
+        }
+      }
+
+      function showNotification(message, type = "success") {
+        alert(message);
+      }
+
+      function filterCountries() {
+        const searchText = document
+          .getElementById("countrySearch")
+          .value.toLowerCase();
+        const rows = document.querySelectorAll(".country-table tbody tr");
+
+        rows.forEach((row) => {
+          const countryName = row
+            .querySelector("td:first-child")
+            .textContent.toLowerCase();
+          row.style.display = countryName.includes(searchText) ? "" : "none";
+        });
+      }
+
+      function sortCountries(by) {
+        const tbody = document.querySelector(".country-table tbody");
+        const rows = Array.from(tbody.querySelectorAll("tr"));
+
+        rows.sort((a, b) => {
+          if (by === "name") {
+            const nameA = a.querySelector("td:first-child").textContent;
+            const nameB = b.querySelector("td:first-child").textContent;
+            return nameA.localeCompare(nameB);
+          } else if (by === "blockDays") {
+            const daysA =
+              parseInt(a.querySelector(".block-days-input").value) || 0;
+            const daysB =
+              parseInt(b.querySelector(".block-days-input").value) || 0;
+            return daysA - daysB;
+          }
+        });
+
+        tbody.innerHTML = "";
+        rows.forEach((row) => tbody.appendChild(row));
+      }
+
+      const AVAILABLE_COUNTRIES = new Set([
+        "Afghanistan",
+        "Albania",
+        "Algeria",
+        "Andorra",
+        "Angola",
+        "Argentina",
+        "Armenia",
+        "Australia",
+        "Austria",
+        "Azerbaijan",
+        "Bahamas",
+        "Bahrain",
+        "Bangladesh",
+        "Belgium",
+        "Brazil",
+        "Canada",
+        "China",
+        "Denmark",
+        "Egypt",
+        "Finland",
+        "France",
+        "Germany",
+        "Greece",
+        "India",
+        "Indonesia",
+        "Iran",
+        "Iraq",
+        "Ireland",
+        "Israel",
+        "Italy",
+        "Japan",
+        "Jordan",
+        "Kazakhstan",
+        "Kenya",
+        "Kuwait",
+        "Lebanon",
+        "Libya",
+        "Malaysia",
+        "Mexico",
+        "Morocco",
+        "Netherlands",
+        "New Zealand",
+        "Nigeria",
+        "Norway",
+        "Oman",
+        "Pakistan",
+        "Philippines",
+        "Poland",
+        "Portugal",
+        "Qatar",
+        "Romania",
+        "Russia",
+        "Saudi Arabia",
+        "Singapore",
+        "South Africa",
+        "South Korea",
+        "Spain",
+        "Sweden",
+        "Switzerland",
+        "Syria",
+        "Taiwan",
+        "Thailand",
+        "Turkey",
+        "UAE",
+        "UK",
+        "Ukraine",
+        "United States",
+        "Uruguay",
+        "Uzbekistan",
+        "Venezuela",
+        "Vietnam",
+        "Yemen",
+      ]);
+
+      function setupCountryAutocomplete() {
+        const input = document.getElementById("newCountryName");
+        const datalist = document.createElement("datalist");
+        datalist.id = "country-suggestions";
+
+        AVAILABLE_COUNTRIES.forEach((country) => {
+          const option = document.createElement("option");
+          option.value = country;
+          datalist.appendChild(option);
+        });
+
+        document.body.appendChild(datalist);
+        input.setAttribute("list", "country-suggestions");
+      }
+
+      // Call this when the modal opens
+      function openModal() {
+        document.getElementById("addCountryModal").style.display = "block";
+        setupCountryAutocomplete();
+      }
+    </script>
+    <% } catch (error) { %>
+    <div style="color: red; padding: 20px">
+      Error rendering template: <%= error.message %>
+      <pre><%= error.stack %></pre>
+    </div>
+    <% } %>
+  </body>
+</html>

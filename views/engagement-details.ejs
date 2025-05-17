@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Engagement Details</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+    <script src="/js/role-ui.js" defer></script>
+    <script src="/js/engagement-details.js" defer></script>
+  </head>
+  <body>
+    <nav>
+      <div class="nav-left">
+        <a href="/dashboard">Dashboard</a>
+        <% if (locals.features && features.calendarRules) { %>
+          <a href="/calendar-rules">Calendar Rules</a>
+        <% } %>
+      </div>
+      <div class="nav-right">
+        <% if (locals.features && features.userRoleSystem) { %>
+          <div class="role-selector">
+            <select id="roleSelect" onchange="switchRole(this.value)">
+              <option value="coordinator">Engagement Coordinator View</option>
+              <option value="manager">Manager View</option>
+              <option value="activityOwner">Activity Owner View</option>
+            </select>
+          </div>
+        <% } %>
+        <a href="/settings" class="settings-link">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </a>
+        <a href="/logout">Logout</a>
+      </div>
+    </nav>
+
+    <div class="container">
+      <h1>Engagement Details</h1>
+      <div class="info-grid">
+        <div class="info-item">
+          <strong>System Created Request Number:</strong> <%= engagement._id %>
+        </div>
+        <div class="info-item">
+          <strong>Engagement Number:</strong>
+          <input
+            type="text"
+            value="<%= engagement.engagementNumber || '' %>"
+            placeholder="Enter Engagement Number"
+          />
+        </div>
+        <div class="info-item">
+          <strong>Engagement Name:</strong>
+          <input
+            type="text"
+            value="<%= engagement.engagementName || '' %>"
+            placeholder="Enter Engagement Name"
+          />
+        </div>
+        <div class="info-item">
+          <strong>Date of Engagement:</strong> <%= new
+          Date(engagement.engagementDate).toLocaleDateString() %>
+        </div>
+        <div class="info-item">
+          <strong>Number of Experts:</strong> <%= engagement.experts ?
+          engagement.experts.length : 0 %>
+        </div>
+        <div class="info-item">
+          <strong>Activity Owner Name:</strong> <%= engagement.additionalInfo ?
+          engagement.additionalInfo.activityOwnerName : 'N/A' %>
+        </div>
+        <div class="info-item">
+          <strong>Activity Owner Email:</strong> <%= engagement.additionalInfo ?
+          engagement.additionalInfo.activityOwnerEmail : 'N/A' %>
+        </div>
+        <div class="info-item">
+          <strong>Business Unit:</strong> <%= engagement.businessUnit || 'N/A'
+          %>
+        </div>
+        <% if (engagement.submittingOnBehalfOfOthers) { %>
+        <div class="info-item">
+          <strong>Requestor Name:</strong> <%= engagement.additionalInfo ?
+          engagement.additionalInfo.requestorName : 'N/A' %>
+        </div>
+        <div class="info-item">
+          <strong>Requestor Email:</strong> <%= engagement.additionalInfo ?
+          engagement.additionalInfo.requestorEmail : 'N/A' %>
+        </div>
+        <% } %>
+        <div class="info-item service-agreement-info">
+          <h3>Service Agreement Status</h3>
+          <% 
+            const getServiceAgreementStatus = (expert) => {
+              if (expert.needAgreement) {
+                return `${expert.agreementType || 'Service Agreement'} Requested`;
+              } else if (expert.haveAgreementNoNumber) {
+                return 'Yes - Need to Find Agreement Number';
+              } else if (expert.haveAgreementWithNumber) {
+                return `Agreement Number: ${expert.agreementNumber}`;
+              }
+              return 'Not Specified';
+            };
+        
+            engagement.experts.forEach(expert => {
+          %>
+            <div class="expert-agreement">
+              <strong><%= expert.name %>:</strong>
+              <span class="agreement-status"><%= getServiceAgreementStatus(expert) %></span>
+            </div>
+          <% }); %>
+        </div>
+        
+      </div>
+
+      <!-- Add this before the expert details section -->
+<div class="info-section">
+  <h3>
+    NomSig Approvals Required
+    <span class="info-icon" title="This information may not be up to date. Please verify following this link here">
+      ℹ️ 
+      <a href="#" class="verify-link">Verify Here</a>
+    </span>
+  </h3>
+  
+  <div class="nomsig-container">
+    <% 
+      const nomsigCountries = ['France', 'South Korea', 'UK', 'Italy', 'Belgium', 'Singapore'];
+      const nomsigExperts = engagement.experts.filter(expert => 
+        nomsigCountries.includes(expert.country)
+      );
+    %>
+    
+    <% if (nomsigExperts.length > 0) { %>
+      <div class="nomsig-list">
+        <% nomsigExperts.forEach(expert => { %>
+          <div class="nomsig-item">
+            <div class="nomsig-country">
+              <%= expert.country %>
+              <small>(<%= expert.name %>)</small>
+            </div>
+            <select 
+              class="nomsig-status-select"
+              onchange="updateNomSigStatus('<%= engagement._id %>', '<%= expert.country %>', this.value)"
+            >
+              <option value="notRequired" <%= expert.nomsigStatus === 'notRequired' ? 'selected' : '' %>>Not Required</option>
+              <option value="pendingApproval" <%= expert.nomsigStatus === 'pendingApproval' ? 'selected' : '' %>>Pending Approval</option>
+              <option value="pendingDocs" <%= expert.nomsigStatus === 'pendingDocs' ? 'selected' : '' %>>Pending Documents/Information from AO</option>
+              <option value="approved" <%= expert.nomsigStatus === 'approved' ? 'selected' : '' %>>Approved</option>
+            </select>
+          </div>
+        <% }); %>
+      </div>
+    <% } else { %>
+      <p>No NomSig approvals required for experts in this engagement.</p>
+    <% } %>
+  </div>
+</div>
+
+<div class="info-section status-section">
+  <h3>Engagement Status</h3>
+  <select class="status-select" onchange="updateEngagementStatus('<%= engagement._id %>', this.value)">
+    <option value="Draft" <%= engagement.status === 'Draft' ? 'selected' : '' %>>Draft</option>
+    <option value="Pending Engagement Approval" <%= engagement.status === 'Pending Engagement Approval' ? 'selected' : '' %>>Pending Engagement Approval</option>
+    <option value="All Contracts Executed" <%= engagement.status === 'All Contracts Executed' ? 'selected' : '' %>>All Contracts Executed</option>
+    <option value="Pending COS" <%= engagement.status === 'Pending COS' ? 'selected' : '' %>>Pending COS</option>
+  </select>
+</div>
+
+      <h2>Experts</h2>
+<div class="table-container">
+  <% if (engagement && engagement.experts && engagement.experts.length > 0) { %>
+    <% const hasLTCColumn = engagement.experts.some(expert => expert.ltcServiceAgreement); %>
+    <table id="expertsTable">
+      <tr>
+        <th>Name</th>
+        <th>MDM ID</th>
+        <th>Email</th>
+        <th>Address</th>
+        <th>Specialty</th>
+        <% if (hasLTCColumn) { %>
+          <th>LTC/Service Agreement</th>
+        <% } %>
+        <th>Rationale</th>
+        <th>Associated to HCO/Institution?</th>
+        <th>Emailed Expert?</th>
+        <th>Government Official?</th>
+        <th>FMV Rate</th>
+        <th>Contract Status</th>
+        <th>Payee Information</th>
+      </tr>
+      <% engagement.experts.forEach((expert, index) => { %>
+        <tr>
+          <td><%= expert.name || 'N/A' %></td>
+          <td><input type="text" value="<%= expert.mdmId || '' %>" placeholder="Enter MDM ID"></td>
+          <td><%= expert.email || 'N/A' %></td>
+          <td>
+            <div class="address-stack">
+              <% if (expert.street) { %><span><%= expert.street %></span><% } %>
+              <% if (expert.city || expert.stateProvince || expert.zipCode) { %>
+                <span>
+                  <%= expert.city || '' %><%= expert.city && expert.stateProvince ? ', ' : '' %><%= expert.stateProvince || '' %><%= expert.zipCode ? ' ' + expert.zipCode : '' %>
+                </span>
+              <% } %>
+              <% if (expert.country) { %><span><%= expert.country %></span><% } %>
+            </div>
+          </td>
+          <td><%= expert.specialty || 'N/A' %></td>
+          <% if (hasLTCColumn) { %>
+            <td>
+              <% if (expert.ltcServiceAgreement) { %>
+                <%= expert.ltcServiceAgreement %>
+                <br>
+                <label>
+                  Agreement Expiration Date:
+                  <input type="date" value="<%= expert.longTermAgreementExpiration ? expert.longTermAgreementExpiration.toISOString().split('T')[0] : '' %>">
+                </label>
+              <% } else { %>
+                N/A
+              <% } %>
+            </td>
+          <% } %>
+          <td>
+            <% if (expert.rationale) { %>
+              <div>
+                <label>
+                  <input type="checkbox" <%= expert.rationale.extensiveExperience ? 'checked' : '' %> disabled>
+                  Extensive Experience
+                </label>
+              </div>
+              <div>
+                <label>
+                  <input type="checkbox" <%= expert.rationale.currentResearch ? 'checked' : '' %> disabled>
+                  Current Research
+                </label>
+              </div>
+              <div>
+                <label>
+                  <input type="checkbox" <%= expert.rationale.recentPublications ? 'checked' : '' %> disabled>
+                  Recent Publications
+                </label>
+              </div>
+              <div>
+                Additional Rationale Comments:
+                <br>
+                <%= expert.rationale.text || 'N/A' %>
+              </div>
+            <% } else { %>
+              N/A
+            <% } %>
+          </td>
+          <td>
+            <select onchange="toggleHCODetails(this, 'hcoDetails<%= index %>')">
+              <option value="no" <%= !expert.associatedToHCO ? 'selected' : '' %>>No</option>
+              <option value="yes" <%= expert.associatedToHCO ? 'selected' : '' %>>Yes</option>
+            </select>
+            <input type="text" id="hcoDetails<%= index %>" placeholder="HCO Details" value="<%= expert.hcoDetails || '' %>" style="display: <%= expert.associatedToHCO ? 'block' : 'none' %>;">
+          </td>
+          <td>
+            <select onchange="toggleEmailDate(this, 'emailDate<%= index %>')">
+              <option value="no" <%= !expert.emailedToConfirm ? 'selected' : '' %>>No</option>
+              <option value="yes" <%= expert.emailedToConfirm ? 'selected' : '' %>>Yes</option>
+            </select>
+            <input type="date" id="emailDate<%= index %>" value="<%= expert.emailConfirmationDate ? expert.emailConfirmationDate.toISOString().split('T')[0] : '' %>" style="display: <%= expert.emailedToConfirm ? 'block' : 'none' %>;">
+          </td>
+          <td>
+            <select>
+              <option value="no" <%= !expert.isGovernmentOfficial ? 'selected' : '' %>>No</option>
+              <option value="yes" <%= expert.isGovernmentOfficial ? 'selected' : '' %>>Yes</option>
+            </select>
+          </td>
+          <td>
+            <div class="fmv-container">
+              <select class="fmv-type" onchange="toggleFMVInputs(this)">
+                <option value="hourly" <%= expert.fmvType === 'hourly' ? 'selected' : '' %>>/ Hour</option>
+                <option value="fixed" <%= expert.fmvType === 'fixed' ? 'selected' : '' %>>/ Engagement</option>
+                <option value="uncompensated" <%= expert.fmvType === 'uncompensated' ? 'selected' : '' %>>Uncompensated</option>
+              </select>
+              <div class="fmv-inputs <%= expert.fmvType === 'uncompensated' ? 'disabled' : '' %>">
+                <input 
+                  type="number" 
+                  class="fmv-amount"
+                  value="<%= expert.fmvRate || '' %>" 
+                  step="0.01" 
+                  min="0"
+                  <%= expert.fmvType === 'uncompensated' ? 'disabled' : '' %>
+                >
+                <input 
+                  type="text" 
+                  class="fmv-currency" 
+                  value="<%= expert.fmvCurrency || '' %>" 
+                  maxlength="3" 
+                  placeholder="USD"
+                  list="currency-list"
+                  <%= expert.fmvType === 'uncompensated' ? 'disabled' : '' %>
+                >
+                <datalist id="currency-list">
+                  <option value="USD">
+                  <option value="EUR">
+                  <option value="GBP">
+                  <option value="JPY">
+                  <option value="CHF">
+                  <option value="KRW">
+                  <option value="AUS">
+                  <!-- Add more common currencies -->
+                </datalist>
+              </div>
+            </div>
+          </td>
+          <td>
+            <select>
+              <option <%= expert.contractStatus === 'No Draft' ? 'selected' : '' %>>No Draft</option>
+              <option <%= expert.contractStatus === 'Drafted' ? 'selected' : '' %>>Drafted</option>
+              <option <%= expert.contractStatus === 'Pending Internal Review' ? 'selected' : '' %>>Pending Internal Review</option>
+              <option <%= expert.contractStatus === 'Pending NomSig Approval' ? 'selected' : '' %>>Pending NomSig Approval</option>
+              <option <%= expert.contractStatus === 'Pending AO Review' ? 'selected' : '' %>>Pending AO Review</option>
+              <option <%= expert.contractStatus === 'Pending Expert Review' ? 'selected' : '' %>>Pending Expert Review</option>
+              <option <%= expert.contractStatus === 'Pending Institutional Review' ? 'selected' : '' %>>Pending Institutional Review</option>
+              <option <%= expert.contractStatus === 'Executed' ? 'selected' : '' %>>Executed</option>
+              <option <%= expert.contractStatus === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
+              <option <%= expert.contractStatus === 'Unexecuted' ? 'selected' : '' %>>Unexecuted</option>
+            </select>
+            <textarea placeholder="Additional contract status info"><%= expert.contractStatusInfo || '' %></textarea>
+          </td>
+          <td>
+            <input type="text" placeholder="Last 4 digits" value="<%= expert.payeeLastFourDigits || '' %>" maxlength="4" pattern="\d{4}">
+            <input type="text" placeholder="Payee Number" value="<%= expert.payeeNumber || '' %>">
+            <select>
+              <option <%= expert.bankAccountConfirmation === 'Unconfirmed' ? 'selected' : '' %>>Unconfirmed</option>
+              <option <%= expert.bankAccountConfirmation === 'Pending Expert Confirmation' ? 'selected' : '' %>>Pending Expert Confirmation</option>
+              <option <%= expert.bankAccountConfirmation === 'Confirmed by Expert' ? 'selected' : '' %>>Confirmed by Expert</option>
+              <option <%= expert.bankAccountConfirmation === 'Recently Added - No Confirmation Necessary' ? 'selected' : '' %>>Recently Added - No Confirmation Necessary</option>
+            </select>
+          </td>
+        </tr>
+      <% }); %>
+    </table>
+  <% } else { %>
+    <p>No experts found for this engagement.</p>
+  <% } %>
+</div>
+
+    <script>
+      console.log('Engagement data:', <%- JSON.stringify(engagement) %>);
+      console.log('Number of experts:', <%= engagement.experts ? engagement.experts.length : 0 %>);
+      <% if (engagement.experts && engagement.experts.length > 0) { %>
+        console.log('First expert:', <%- JSON.stringify(engagement.experts[0]) %>);
+      <% } %>
+
+      async function updateNomSigStatus(engagementId, country, status) {
+    try {
+      const response = await fetch(`/api/engagement-requests/${engagementId}/nomsig`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          country,
+          status
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update NomSig status');
+      }
+
+      console.log('NomSig status updated successfully');
+    } catch (error) {
+      console.error('Error updating NomSig status:', error);
+      alert('Failed to update NomSig status');
+    }
+  }
+    </script>
+  </body>
+</html>

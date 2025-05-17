@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Feature Flags Control Panel</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <nav>
+      <div class="nav-left">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/calendar-rules">Calendar Rules</a>
+        <a href="/feature-flags" class="active">Feature Flags</a>
+      </div>
+      <div class="nav-right">
+        <div class="role-selector">
+          <select id="roleSelect" onchange="switchRole(this.value)">
+            <option value="coordinator">Engagement Coordinator View</option>
+            <option value="manager">Manager View</option>
+            <option value="activityOwner">Activity Owner View</option>
+          </select>
+        </div>
+        <a href="/settings" class="settings-link">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </a>
+        <a href="/logout">Logout</a>
+      </div>
+    </nav>
+
+    <div class="container">
+      <h1>Feature Flags Control Panel</h1>
+      <div id="flagsContainer">Loading feature flags...</div>
+    </div>
+
+    <script>
+      function loadFeatureFlags() {
+        fetch("/api/feature-flags")
+          .then((response) => response.json())
+          .then((flags) => {
+            const container = document.getElementById("flagsContainer");
+            container.innerHTML = `
+                        <div class="feature-flags-grid">
+                            ${Object.entries(flags)
+                              .map(
+                                ([flag, enabled]) => `
+                                <div class="feature-flag-item">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" 
+                                            ${enabled ? "checked" : ""} 
+                                            onchange="toggleFlag('${flag}', this.checked)">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <span class="flag-name">${flag}</span>
+                                    <span class="flag-status ${
+                                      enabled ? "enabled" : "disabled"
+                                    }">
+                                        ${enabled ? "Enabled" : "Disabled"}
+                                    </span>
+                                </div>
+                            `
+                              )
+                              .join("")}
+                        </div>
+                    `;
+          })
+          .catch((error) => {
+            console.error("Error loading feature flags:", error);
+            document.getElementById("flagsContainer").innerHTML =
+              "Error loading feature flags. Please try again.";
+          });
+      }
+
+      function toggleFlag(flag, enabled) {
+        fetch(`/api/feature-flags/${flag}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ enabled }),
+        })
+          .then((response) => response.json())
+          .then((result) => {
+            if (result.success) {
+              loadFeatureFlags(); // Reload the flags
+            } else {
+              alert("Error updating feature flag");
+            }
+          })
+          .catch((error) => {
+            console.error("Error toggling feature flag:", error);
+            alert("Error updating feature flag");
+          });
+      }
+
+      // Load flags when page loads
+      loadFeatureFlags();
+    </script>
+
+    <style>
+      .feature-flags-grid {
+        display: grid;
+        gap: 1rem;
+        margin-top: 2rem;
+      }
+
+      .feature-flag-item {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .flag-name {
+        margin-left: 1rem;
+        flex-grow: 1;
+        font-weight: 500;
+      }
+
+      .flag-status {
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+      }
+
+      .flag-status.enabled {
+        background: #d4edda;
+        color: #155724;
+      }
+
+      .flag-status.disabled {
+        background: #f8d7da;
+        color: #721c24;
+      }
+
+      .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+      }
+
+      .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.4s;
+        border-radius: 34px;
+      }
+
+      .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+      }
+
+      input:checked + .toggle-slider {
+        background-color: #2196f3;
+      }
+
+      input:checked + .toggle-slider:before {
+        transform: translateX(26px);
+      }
+    </style>
+  </body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calendar Rules</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+    <script src="/js/role-ui.js" defer></script>
+</head>
+<body>
+    <nav>
+        <div class="nav-left">
+            <a href="/dashboard">Dashboard</a>
+            <% if (features.calendarRules) { %>
+                <% if (currentRole && currentRole.toLowerCase() === 'manager') { %>
+                  <a href="/calendar-rules" class="nav-button active">Calendar Rules</a>
+                  <a href="/my-team" class="nav-button">My Team</a>
+                <% } %>
+            <% } %>
+        </div>
+        <div class="nav-right">
+            <% if (features.userRoleSystem) { %>
+                <div class="role-selector">
+                    <select id="roleSelect" onchange="switchRole(this.value)">
+                        <option value="coordinator" <%= currentRole === 'coordinator' ? 'selected' : '' %>>Engagement Coordinator View</option>
+                        <option value="manager" <%= currentRole === 'manager' ? 'selected' : '' %>>Manager View</option>
+                        <option value="activityOwner" <%= currentRole === 'activityOwner' ? 'selected' : '' %>>Activity Owner View</option>
+                    </select>
+                </div>
+            <% } %>
+            <% if (currentRole === 'coordinator' || currentRole === 'manager') { %>
+                <a href="/settings" class="settings-link">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                </a>
+            <% } %>
+            <a href="/logout">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+      <h1>Calendar Blocking Rules</h1>
+
+      <div class="rules-section">
+        <h2>Add New Rule</h2>
+        <form id="newRuleForm">
+          <select id="ruleType" required>
+            <option value="">Select Rule Type</option>
+            <option value="country">Country</option>
+            <option value="engageAccount">Engage Account</option>
+            <option value="businessUnit">Business Unit</option>
+          </select>
+          <input
+            type="text"
+            id="ruleValue"
+            placeholder="Rule Value (e.g., country name)"
+            required
+          />
+          <input
+            type="number"
+            id="blockDays"
+            placeholder="Number of days to block"
+            required
+          />
+          <button type="submit">Add Rule</button>
+        </form>
+      </div>
+
+      <div class="rules-section">
+        <h2>Existing Rules</h2>
+        <table id="rulesTable">
+          <thead>
+            <tr>
+              <th>Rule Type</th>
+              <th>Rule Value</th>
+              <th>Days Blocked</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="rulesList"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      // Your existing JavaScript for rules management
+      function fetchRules() {
+        fetch("/api/calendar-rules")
+          .then((response) => response.json())
+          .then((data) => {
+            const rulesList = document.getElementById("rulesList");
+            rulesList.innerHTML = "";
+            data.forEach((rule) => {
+              const row = `
+              <tr>
+                <td>${rule.ruleType}</td>
+                <td>${rule.ruleValue}</td>
+                <td>${rule.blockDays}</td>
+                <td>
+                  <button onclick="deleteRule('${rule._id}')">Delete</button>
+                </td>
+              </tr>
+            `;
+              rulesList.innerHTML += row;
+            });
+          })
+          .catch((error) => console.error("Error:", error));
+      }
+
+      document
+        .getElementById("newRuleForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+          const newRule = {
+            ruleType: document.getElementById("ruleType").value,
+            ruleValue: document.getElementById("ruleValue").value,
+            blockDays: document.getElementById("blockDays").value,
+          };
+
+          fetch("/api/calendar-rules", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(newRule),
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              console.log("Success:", data);
+              fetchRules();
+              e.target.reset();
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+            });
+        });
+
+      function deleteRule(id) {
+        if (confirm("Are you sure you want to delete this rule?")) {
+          fetch(`/api/calendar-rules/${id}`, {
+            method: "DELETE",
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              console.log("Success:", data);
+              fetchRules();
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+            });
+        }
+      }
+
+      fetchRules();
+    </script>
+  </body>
+</html>

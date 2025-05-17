@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Team</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/role-ui.js" defer></script>
+</head>
+<body>
+    <nav>
+        <div class="nav-left">
+            <a href="/dashboard">Dashboard</a>
+            <% if (features.calendarRules) { %>
+                <a href="/calendar-rules">Calendar Rules</a>
+            <% } %>
+            <% if (currentRole === 'manager') { %>
+                <a href="/my-team" class="active">My Team</a>
+            <% } %>
+        </div>
+        <div class="nav-right">
+            <% if (features.userRoleSystem) { %>
+                <div class="role-selector">
+                    <select id="roleSelect" onchange="switchRole(this.value)">
+                        <option value="coordinator">Engagement Coordinator View</option>
+                        <option value="manager">Manager View</option>
+                        <option value="activityOwner">Activity Owner View</option>
+                    </select>
+                </div>
+            <% } %>
+            <a href="/settings" class="settings-link">Settings</a>
+            <a href="/logout">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header-container">
+            <h1>My Team - <%= businessUnit %></h1>
+            <button onclick="openAddMemberModal()" class="add-member-button">Add Team Member</button>
+        </div>
+
+        <div class="team-members-container">
+            <% if (team && team.members && team.members.length > 0) { %>
+                <table class="team-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% team.members.forEach(function(member) { %>
+                            <tr>
+                                <td><%= member.name %></td>
+                                <td><%= member.email %></td>
+                                <td><%= member.role %></td>
+                                <td class="actions">
+                                    <button onclick="editMember('<%= member._id %>')" class="edit-button">Edit</button>
+                                    <button onclick="removeMember('<%= member._id %>')" class="remove-button">Remove</button>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            <% } else { %>
+                <p>No team members found. Add some team members to get started!</p>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- Add/Edit Member Modal -->
+    <div id="memberModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle">Add Team Member</h2>
+            <form id="memberForm" onsubmit="handleMemberSubmit(event)">
+                <input type="hidden" id="memberId">
+                <div class="form-group">
+                    <label for="name">Name:</label>
+                    <input type="text" id="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="role">Role:</label>
+                    <select id="role" required>
+                        <option value="team_member">Team Member</option>
+                        <option value="manager">Manager</option>
+                    </select>
+                </div>
+                <button type="submit" class="submit-button">Save</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openAddMemberModal() {
+            document.getElementById('modalTitle').textContent = 'Add Team Member';
+            document.getElementById('memberForm').reset();
+            document.getElementById('memberId').value = '';
+            document.getElementById('memberModal').style.display = 'block';
+        }
+
+        function editMember(memberId) {
+            // Fetch member details and populate form
+            fetch(`/api/team/member/${memberId}`)
+                .then(response => response.json())
+                .then(member => {
+                    document.getElementById('modalTitle').textContent = 'Edit Team Member';
+                    document.getElementById('memberId').value = member._id;
+                    document.getElementById('name').value = member.name;
+                    document.getElementById('email').value = member.email;
+                    document.getElementById('role').value = member.role;
+                    document.getElementById('memberModal').style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Error fetching member details:', error);
+                    alert('Failed to load member details');
+                });
+        }
+
+        async function handleMemberSubmit(event) {
+            event.preventDefault();
+            const memberId = document.getElementById('memberId').value;
+            const data = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                role: document.getElementById('role').value
+            };
+
+            try {
+                const response = await fetch(`/api/team/member${memberId ? '/' + memberId : ''}`, {
+                    method: memberId ? 'PUT' : 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) throw new Error('Failed to save member');
+                location.reload();
+            } catch (error) {
+                console.error('Error saving member:', error);
+                alert('Failed to save member');
+            }
+        }
+
+        async function removeMember(memberId) {
+            if (!confirm('Are you sure you want to remove this team member?')) return;
+
+            try {
+                const response = await fetch(`/api/team/member/${memberId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) throw new Error('Failed to remove member');
+                location.reload();
+            } catch (error) {
+                console.error('Error removing member:', error);
+                alert('Failed to remove member');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('memberModal').style.display = 'none';
+        }
+    </script>
+    <script src="/js/team-management.js"></script>
+</body>
+</html>

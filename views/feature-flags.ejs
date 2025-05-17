@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Feature Flags</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+    <script src="/js/role-ui.js" defer></script>
+</head>
+<body>
+    <nav class="main-nav">
+        <div class="nav-left">
+            <a href="/dashboard">Dashboard</a>
+            <% if (features.calendarRules) { %>
+                <a href="/calendar-rules">Calendar Rules</a>
+            <% } %>
+            <a href="/feature-flags" class="active">Feature Flags</a>
+        </div>
+        <div class="nav-right">
+            <% if (features.userRoleSystem) { %>
+                <div class="role-selector">
+                    <select id="roleSelect" onchange="switchRole(this.value)">
+                        <option value="coordinator">Engagement Coordinator View</option>
+                        <option value="manager">Manager View</option>
+                        <option value="activityOwner">Activity Owner View</option>
+                    </select>
+                </div>
+            <% } %>
+            <a href="/settings" class="settings-link">Settings</a>
+            <a href="/logout">Logout</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <h1>Feature Flags</h1>
+        <div class="feature-flags-list">
+            <div class="feature-flag">
+                <h3>User Role System</h3>
+                <p>Status: <%= features.userRoleSystem ? 'Enabled' : 'Disabled' %></p>
+            </div>
+            <div class="feature-flag">
+                <h3>Calendar Rules</h3>
+                <p>Status: <%= features.calendarRules ? 'Enabled' : 'Disabled' %></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/main.js"></script>
+</body>
+</html>

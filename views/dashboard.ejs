@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+    <script src="/js/dashboard.js" defer></script>
+    <script src="/js/role-ui.js" defer></script>
+    <style>
+      .btn-activity-owner {
+        background-color: #9b59b6;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+      .btn-activity-owner:hover {
+        background-color: #8e44ad;
+      }
+    </style>
+  </head>
+  <body class="role-<%= currentRole?.toLowerCase() %>">
+    <style>
+      /* Activity Owner specific styles */
+      .role-activityowner .crf-button {
+        display: none !important;
+      }
+      .role-activityowner .view-button {
+        background-color: #9b59b6 !important;
+        color: white !important;
+        padding: 8px 16px !important;
+        border-radius: 4px !important;
+        text-decoration: none !important;
+        display: inline-block !important;
+      }
+      .role-activityowner .view-button:hover {
+        background-color: #8e44ad !important;
+      }
+      .role-activityowner .view-button::before {
+        content: "View & Edit Engagement Details";
+        display: inline;
+      }
+      .role-activityowner .view-button span {
+        display: none;
+      }
+    </style>
+    <nav class="nav-bar">
+      <div class="nav-left">
+        <a href="/dashboard" class="active">Dashboard</a>
+        
+        <% if (currentRole && currentRole.toLowerCase() === 'manager') { %>
+          <% if (locals.features && features.calendarRules === true) { %>
+            <a href="/calendar-rules" class="nav-button">Calendar Rules</a>
+          <% } %>
+          <a href="/my-team" class="nav-button">My Team</a>
+        <% } %>
+      </div>
+      <div class="nav-right">
+        <% if (locals.features && features.userRoleSystem === true) { %>
+          <div class="role-selector">
+            <select id="roleSelect" onchange="switchRole(this.value)">
+              <option value="coordinator" <%= currentRole === 'coordinator' ? 'selected' : '' %>>Engagement Coordinator View</option>
+              <option value="manager" <%= currentRole === 'manager' ? 'selected' : '' %>>Manager View</option>
+              <option value="activityOwner" <%= currentRole === 'activityOwner' ? 'selected' : '' %>>Activity Owner View</option>
+            </select>
+          </div>
+        <% } %>
+        <% if (['coordinator', 'manager'].includes(currentRole?.toLowerCase())) { %>
+          <a href="/settings" class="settings-link">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </a>
+        <% } %>
+        <a href="/logout" class="logout-button">Logout</a>
+      </div>
+    </nav>
+
+    <div class="container">
+      <div class="header-container">
+        <h1>Engagement Requests Dashboard</h1>
+      </div>
+
+      <div class="search-container">
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="Search by engagement name"
+          onkeyup="filterTable()"
+        />
+      </div>
+
+      <div class="table-container">
+        <table id="engagementTable">
+          <thead>
+            <tr>
+              <th onclick="sortTable(0)">Request ID</th>
+              <th onclick="sortTable(1)">Engagement Number</th>
+              <th onclick="sortTable(2)">Engagement Name</th>
+              <th onclick="sortTable(3)">Date of Engagement</th>
+              <% if (locals.features && features.nomsigApproval === true) { %>
+                <th onclick="sortTable(5)">NomSig Status</th>
+              <% } %>
+              <th onclick="sortTable(6)">Activity Owner</th>
+              <th onclick="sortTable(7)">Business Unit</th>
+              <th onclick="sortTable(8)">Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="engagementList">
+            <% if (locals.requests && requests.length > 0) { %>
+              <% requests.forEach(function(request) { %>
+                <tr>
+                  <td><%= request._id %></td>
+                  <td><%= request.engagementNumber || 'Not Set' %></td>
+                  <td><%= request.engagementName || 'Not Set' %></td>
+                  <td>
+                    <%= request.engagementDate ? new Date(request.engagementDate).toLocaleDateString() : 'Not Set' %>
+                  </td>
+                  <% if (locals.features && features.nomsigApproval === true) { %>
+                    <td>
+                      <% 
+                        const nomsigCountries = ['France', 'South Korea', 'UK', 'Italy', 'Belgium', 'Singapore'];
+                        const requiresNomSig = request.experts.some(expert => 
+                          nomsigCountries.includes(expert.country)
+                        );
+                      %>
+                      <% if (requiresNomSig) { %>
+                        <select 
+                          class="nomsig-status-select"
+                          onchange="updateNomSigStatus('<%= request._id %>', this.value)"
+                          data-request-id="<%= request._id %>"
+                        >
+                          <option value="notRequired" <%= request.nomsigStatus === 'notRequired' ? 'selected' : '' %>>
+                            Not Required
+                          </option>
+                          <option value="pendingApproval" <%= request.nomsigStatus === 'pendingApproval' ? 'selected' : '' %>>
+                            Pending Approval
+                          </option>
+                          <option value="pendingDocs" <%= request.nomsigStatus === 'pendingDocs' ? 'selected' : '' %>>
+                            Pending Documents
+                          </option>
+                          <option value="approved" <%= request.nomsigStatus === 'approved' ? 'selected' : '' %>>
+                            Approved
+                          </option>
+                        </select>
+                      <% } else { %>
+                        <span class="status-badge not-required">Not Required</span>
+                      <% } %>
+                    </td>
+                  <% } %>
+                  <td>
+                    <div class="owner-info">
+                      <div><%= request.additionalInfo ? request.additionalInfo.activityOwnerName : 'N/A' %></div>
+                      <small><%= request.additionalInfo ? request.additionalInfo.activityOwnerEmail : '' %></small>
+                    </div>
+                  </td>
+                  <td><%= request.businessUnit || 'N/A' %></td>
+                  <td><%= request.status || 'Draft' %></td>
+                  <td class="actions">
+                    <% if (currentRole?.toLowerCase() === 'activityowner') { %>
+                      <div class="action-group">
+                        <button 
+                          onclick="viewDetails('<%= request._id %>')"
+                          style="background-color: #9b59b6; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;"
+                          onmouseover="this.style.backgroundColor='#8e44ad'"
+                          onmouseout="this.style.backgroundColor='#9b59b6'"
+                        >
+                          View & Edit Engagement Details
+                        </button>
+                      </div>
+                    <% } else { %>
+                      <div class="action-group">
+                        <a href="/engagement/<%= request._id %>" class="view-button">View Details</a>
+                        <% if (locals.features && features.crfGeneration === true) { %>
+                          <button 
+                            onclick="generateCRF('<%= request._id %>')" 
+                            class="crf-button"
+                          >
+                            Generate CRF
+                          </button>
+                        <% } %>
+                      </div>
+                      <% if (currentRole?.toLowerCase() === 'manager') { %>
+                        <button 
+                          onclick="assignToEC('<%= request._id %>')" 
+                          class="assign-ec-button"
+                          id="assignButton_<%= request._id %>"
+                        >
+                          Assign to EC
+                        </button>
+                      <% } %>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }); %>
+            <% } else { %>
+              <tr>
+                <td colspan="10">No engagement requests found.</td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="loadingMessage" style="display: none;">Loading...</div>
+    <div id="errorMessage" style="display: none;">Error loading data</div>
+
+    <script>
+      // Debug logging for role detection
+      document.addEventListener('DOMContentLoaded', () => {
+        const storedRole = sessionStorage.getItem('selectedRole');
+        console.log('Role Debug Info:', {
+          storedRole,
+          serverRole: '<%= currentRole %>',
+          effectiveRole: storedRole || '<%= currentRole %>' || 'coordinator'
+        });
+      });
+
+      // Initialize role handling
+      let currentUserRole = sessionStorage.getItem('selectedRole') || 'coordinator';
+      
+      function updateUIForRole() {
+        const isActivityOwner = currentUserRole.toLowerCase() === 'activityowner';
+        
+        // Update all action cells based on role
+        document.querySelectorAll('.actions').forEach(cell => {
+          const viewButton = cell.querySelector('.view-button');
+          const crfButton = cell.querySelector('.crf-button');
+          const assignButton = cell.querySelector('.assign-ec-button');
+          
+          if (isActivityOwner) {
+            // Hide existing buttons
+            if (viewButton) viewButton.style.display = 'none';
+            if (crfButton) crfButton.style.display = 'none';
+            if (assignButton) assignButton.style.display = 'none';
+            
+            // Add activity owner button if it doesn't exist
+            if (!cell.querySelector('.activity-owner-button')) {
+              const actionGroup = cell.querySelector('.action-group');
+              if (actionGroup) {
+                const button = document.createElement('button');
+                button.className = 'activity-owner-button';
+                button.style.backgroundColor = '#9b59b6';
+                button.style.color = 'white';
+                button.style.border = 'none';
+                button.style.padding = '8px 16px';
+                button.style.borderRadius = '4px';
+                button.style.cursor = 'pointer';
+                button.textContent = 'View & Edit Engagement Details';
+                button.onclick = () => viewDetails(actionGroup.closest('tr').querySelector('td').textContent);
+                
+                // Add hover effect
+                button.onmouseover = () => button.style.backgroundColor = '#8e44ad';
+                button.onmouseout = () => button.style.backgroundColor = '#9b59b6';
+                
+                actionGroup.innerHTML = '';
+                actionGroup.appendChild(button);
+              }
+            }
+          } else {
+            // Show original buttons for other roles
+            if (viewButton) viewButton.style.display = '';
+            if (crfButton) crfButton.style.display = '';
+            if (currentUserRole.toLowerCase() === 'manager' && assignButton) {
+              assignButton.style.display = '';
+            } else if (assignButton) {
+              assignButton.style.display = 'none';
+            }
+          }
+        });
+      }
+      
+      // Update role switching function
+      function switchRole(role) {
+        currentUserRole = role;
+        sessionStorage.setItem('selectedRole', role);
+        updateUIForRole();
+      }
+      
+      // Initialize UI on page load
+      document.addEventListener('DOMContentLoaded', () => {
+        const roleSelect = document.getElementById('roleSelect');
+        if (roleSelect) {
+          roleSelect.value = currentUserRole;
+        }
+        updateUIForRole();
+      });
+
+      // Update role switching function
+      function switchRole(role) {
+        console.log('Switching to role:', role);
+        sessionStorage.setItem('selectedRole', role);
+        // Force a server-side reload to ensure proper role application
+        window.location.href = '/dashboard?role=' + role;
+      }
+
+      // Get the role from session storage or default to coordinator
+      const storedRole = sessionStorage.getItem('selectedRole');
+      console.log('Stored role:', storedRole);
+      
+      // Function to switch roles
+      // function switchRole(role) {
+      //   console.log('Switching to role:', role);
+      //   sessionStorage.setItem('selectedRole', role);
+      //   window.location.reload();
+      // }
+      
+      // Set the initial role in the selector
+      document.addEventListener('DOMContentLoaded', () => {
+        const roleSelect = document.getElementById('roleSelect');
+        if (storedRole && roleSelect) {
+          roleSelect.value = storedRole;
+        }
+        
+        // Show/hide assign buttons based on role
+        if (storedRole && ['Manager', 'manager', 'admin'].includes(storedRole.toLowerCase())) {
+          document.querySelectorAll('[id^="assignButton_"]').forEach(button => {
+            button.style.display = 'block';
+          });
+        }
+      });
+
+      // Debug logging
+      console.log('Server-side role:', '<%= currentRole %>');
+      console.log('Session storage role:', sessionStorage.getItem('selectedRole'));
+      
+      const currentRole = '<%= currentRole %>' || sessionStorage.getItem('selectedRole') || 'coordinator';
+      console.log('Effective Role:', currentRole);
+      
+      function filterTable() {
+        const searchInput = document.getElementById("searchInput").value.toLowerCase();
+        const table = document.getElementById("engagementTable");
+        const rows = table.getElementsByTagName("tr");
+
+        for (let i = 1; i < rows.length; i++) {
+          const engagementName = rows[i].getElementsByTagName("td")[2]
+            .querySelector("input")
+            .value.toLowerCase();
+          rows[i].style.display = engagementName.includes(searchInput) ? "" : "none";
+        }
+      }
+
+      function sortTable(columnIndex) {
+        const table = document.getElementById("engagementTable");
+        const rows = Array.from(table.rows).slice(1);
+        const tbody = table.querySelector("tbody");
+        
+        rows.sort((a, b) => {
+          let aValue = a.cells[columnIndex].textContent;
+          let bValue = b.cells[columnIndex].textContent;
+          
+          // Handle input fields
+          if (columnIndex === 1 || columnIndex === 2) {
+            aValue = a.cells[columnIndex].querySelector("input").value;
+            bValue = b.cells[columnIndex].querySelector("input").value;
+          }
+          
+          // Handle date comparison
+          if (columnIndex === 3) {
+            return new Date(aValue) - new Date(bValue);
+          }
+          
+          return aValue.localeCompare(bValue);
+        });
+        
+        tbody.innerHTML = "";
+        rows.forEach(row => tbody.appendChild(row));
+      }
+
+      async function updateNomSigStatus(requestId, status) {
+        try {
+          const response = await fetch(`/api/engagement-requests/${requestId}/nomsig`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status })
+          });
+
+          if (!response.ok) throw new Error('Failed to update NomSig status');
+          console.log('NomSig status updated successfully');
+        } catch (error) {
+          console.error('Error updating NomSig status:', error);
+          alert('Failed to update NomSig status. Please try again.');
+        }
+      }
+
+      async function updateStatus(requestId, status) {
+        try {
+          const response = await fetch(`/api/engagement-requests/${requestId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status })
+          });
+
+          if (!response.ok) throw new Error('Failed to update status');
+          console.log('Status updated successfully');
+        } catch (error) {
+          console.error('Error updating status:', error);
+          alert('Failed to update status. Please try again.');
+        }
+      }
+
+      function generateCRF(requestId) {
+        console.log('Generating CRF for request:', requestId);
+        alert('CRF generation functionality will be implemented soon.');
+      }
+
+      async function assignToEC(requestId) {
+        try {
+          const response = await fetch(`/api/engagement-requests/${requestId}/assign-ec`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (!response.ok) throw new Error('Failed to assign to EC');
+          showNotification('Successfully assigned to Engagement Coordinator');
+          location.reload();
+        } catch (error) {
+          console.error('Error assigning to EC:', error);
+          showNotification('Failed to assign to EC. Please try again.', 'error');
+        }
+      }
+
+      function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+          notification.remove();
+        }, 3000);
+      }
+
+      // Save any changes made to engagement number or name
+      document.querySelectorAll('.table-input').forEach(input => {
+        input.addEventListener('change', function() {
+          const row = this.closest('tr');
+          const requestId = row.cells[0].textContent;
+          const fieldName = this.closest('td').cellIndex === 1 ? 'engagementNumber' : 'engagementName';
+          const value = this.value;
+
+          fetch(`/api/engagement-requests/${requestId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ [fieldName]: value })
+          })
+          .then(response => {
+            if (!response.ok) throw new Error('Failed to update');
+            console.log('Updated successfully');
+          })
+          .catch(error => {
+            console.error('Error updating:', error);
+            alert('Failed to update. Please try again.');
+          });
+        });
+      });
+
+      // Handle status changes
+      document.querySelectorAll('.status-select').forEach(select => {
+        select.addEventListener('change', function() {
+          const row = this.closest('tr');
+          const requestId = row.cells[0].textContent;
+          const value = this.value;
+
+          fetch(`/api/engagement-requests/${requestId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: value })
+          })
+          .then(response => {
+            if (!response.ok) throw new Error('Failed to update status');
+            console.log('Status updated successfully');
+          })
+          .catch(error => {
+            console.error('Error updating status:', error);
+            alert('Failed to update status. Please try again.');
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
