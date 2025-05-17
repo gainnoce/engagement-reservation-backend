@@ -8,7 +8,7 @@
 </head>
 <body>
     <div class="login-container">
-        <form method="POST" action="/admin" class="login-form" id="loginForm" onsubmit="return handleSubmit(event)">
+        <form method="POST" action="/admin" class="login-form">
             <h2>Admin Login</h2>
             <% if (error) { %>
                 <div class="error-message"><%= error %></div>
@@ -20,55 +20,11 @@
     </div>
 
     <script>
-        function handleSubmit(event) {
-            event.preventDefault();
-            console.log('Form submitted');
-            
-            const form = event.target;
-            const username = form.querySelector('input[name="username"]').value;
-            const password = form.querySelector('input[name="password"]').value;
-            
-            console.log('Submitting with:', {
-                username: username,
-                password: password ? '***' : undefined
-            });
-            
-            const formData = new FormData(form);
-            
-            fetch('/admin', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: formData.toString()
-            })
-            .then(response => {
-                console.log('Response status:', response.status);
-                if (response.ok) {
-                    console.log('Login successful, redirecting to dashboard');
-                    window.location.href = '/dashboard';
-                } else {
-                    console.log('Login failed, getting error message');
-                    return response.text();
-                }
-            })
-            .then(data => {
-                console.log('Error data:', data);
-                if (data) {
-                    const errorDiv = document.querySelector('.error-message');
-                    errorDiv.textContent = data;
-                    errorDiv.style.display = 'block';
-                    console.log('Error displayed:', data);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                const errorDiv = document.querySelector('.error-message');
-                errorDiv.textContent = 'An error occurred. Please try again.';
-                errorDiv.style.display = 'block';
-            });
-            
-            return false; // Prevent default form submission
+        // Add error message display functionality
+        function showError(message) {
+            const errorDiv = document.querySelector('.error-message');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
         }
     </script>
 </body>
