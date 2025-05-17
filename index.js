@@ -52,15 +52,32 @@ store.on('error', function(error) {
 
 // Session setup
 app.use(session({
+  store: store,
   secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
   saveUninitialized: true,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    httpOnly: true,
+    sameSite: 'lax'
   },
-  store: store
+  name: 'engagement-session'
 }));
+
+// Add session save middleware to ensure sessions are saved after each request
+app.use((req, res, next) => {
+  if (req.session) {
+    req.session.save(err => {
+      if (err) {
+        console.error('Error saving session:', err);
+      }
+      next();
+    });
+  } else {
+    next();
+  }
+});
 
 // Error handling
 process.on("uncaughtException", (error) => {
