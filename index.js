@@ -286,32 +286,10 @@ app.get("/test-admin", (req, res) => {
     if (err) {
       console.error("Error sending admin file:", err);
       res.status(500).send("Error loading admin page");
-=======
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-require('dotenv').config();
-const EngagementRequest = require('./EngagementRequest');
+    }
+  });
+});
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Middleware
-app.use(cors());
-app.use(express.json());
-
-// MongoDB Connection
-if (!process.env.MONGODB_URI) {
-  console.error('MONGODB_URI is not set in the environment variables');
-  process.exit(1);
-}
-
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  writeConcern: {
-    w: 'majority',
-    j: true,
     wtimeout: 1000
   }
 })
@@ -338,7 +316,7 @@ app.get('/', (req, res) => {
     endpoints: {
       test: '/api/test',
       engagements: '/api/engagement-requests'
->>>>>>> ac33afc350064245bc645b029b18f159c88266c9
+
     }
   });
 });
