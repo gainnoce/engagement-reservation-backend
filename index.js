@@ -213,20 +213,31 @@ app.get("/admin", (req, res) => {
 
 // Admin login POST handler
 app.post("/admin", (req, res) => {
+  console.log('\n=== Admin Login Attempt ===');
+  console.log('Received body:', req.body);
+  console.log('Session before:', req.session);
+  
   const { username, password } = req.body;
   
   // For demo purposes - using the original credentials
   if (username === "admin" && password === "password123") {
+    console.log('Credentials match, setting session');
     req.session.isAuthenticated = true;
     req.session.userRole = "admin";
+    
+    console.log('Session after setting:', req.session);
+    
     req.session.save((err) => {
       if (err) {
         console.error("Session save error:", err);
         return res.redirect("/admin?error=Session error");
       }
+      
+      console.log('Session saved successfully, redirecting to dashboard');
       res.redirect("/dashboard");
     });
   } else {
+    console.log('Invalid credentials provided');
     res.redirect("/admin?error=Invalid credentials");
   }
 });
