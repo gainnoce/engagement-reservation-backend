@@ -74,28 +74,19 @@ setInterval(() => {
 app.use(session({
   store: store,
   secret: process.env.SESSION_SECRET || 'your-secret-key',
-  resave: true,
+  resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     httpOnly: true,
     sameSite: 'none',
-    domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined,
-    secure: true,
+    domain: '.onrender.com',
     path: '/',
-    signed: true
+    secure: true
   },
-  name: 'engagement-session',
-  rolling: true,
-  genid: function(req) {
-    return require('crypto').randomBytes(24).toString('hex')
-  }
+  name: 'engagement-session'
 }));
-
-// Add cookie parser
-const cookieParser = require('cookie-parser');
-app.use(cookieParser(process.env.SESSION_SECRET || 'your-secret-key'));
 
 // Add session save middleware
 app.use((req, res, next) => {
@@ -301,16 +292,6 @@ app.post("/admin", (req, res) => {
         console.error("Session save error:", err);
         return res.redirect("/admin?error=Session error");
       }
-      
-      // Set the session cookie explicitly
-      const sessionCookie = req.session.cookie;
-      res.cookie('engagement-session', req.sessionID, {
-        ...sessionCookie,
-        secure: true,
-        httpOnly: true,
-        sameSite: 'none',
-        domain: '.onrender.com'
-      });
       
       console.log('Session saved successfully, redirecting to dashboard');
       res.redirect("/dashboard");
