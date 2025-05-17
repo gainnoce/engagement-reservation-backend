@@ -227,6 +227,33 @@ app.get("/logout", (req, res) => {
   });
 });
 
+// Feature flag routes
+setupFeatureFlagRoutes(app);
+
+// Login route (for backward compatibility)
+app.post("/login", (req, res) => {
+  console.log("\n=== Login Attempt ===");
+  console.log("Body:", req.body);
+  const { username, password } = req.body;
+  
+  // For demo purposes - using the original credentials
+  if (username === "admin" && password === "password123") {
+    console.log("Login successful");
+    req.session.isAuthenticated = true;
+    req.session.userRole = "admin";
+    req.session.save((err) => {
+      if (err) {
+        console.error("Session save error:", err);
+        return res.redirect("/admin?error=Session error");
+      }
+      console.log("Session saved, redirecting to dashboard");
+      res.redirect("/dashboard");
+    });
+  } else {
+    res.redirect("/admin?error=Invalid credentials");
+  }
+});
+
 app.post("/login", (req, res) => {
   console.log("\n=== Login Attempt ===");
   console.log("Body:", req.body);
