@@ -2,7 +2,7 @@
 const express = require("express");
 const session = require("express-session");
 const path = require("path");
-const { isFeatureEnabled, setupFeatureFlagRoutes } = require('./src/config/featureflags');
+const { isFeatureEnabled, setupFeatureFlagRoutes } = require('./src/config/featureFlags');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const fs = require('fs');
