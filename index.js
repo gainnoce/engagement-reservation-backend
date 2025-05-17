@@ -184,10 +184,46 @@ mongoose
   });
 
 // 8. AUTHENTICATION ROUTES
+// Admin login GET route
 app.get("/admin", (req, res) => {
-  res.render("admin", {
-    title: "Admin Login",
-    error: req.query.error
+  // If user is already authenticated, redirect to dashboard
+  if (req.session.isAuthenticated) {
+    res.redirect("/dashboard");
+  } else {
+    res.render("admin", {
+      title: "Admin Login",
+      error: req.query.error
+    });
+  }
+});
+
+// Admin login POST handler
+app.post("/admin", (req, res) => {
+  const { username, password } = req.body;
+  
+  // For demo purposes - using the original credentials
+  if (username === "admin" && password === "password123") {
+    req.session.isAuthenticated = true;
+    req.session.userRole = "admin";
+    req.session.save((err) => {
+      if (err) {
+        console.error("Session save error:", err);
+        return res.redirect("/admin?error=Session error");
+      }
+      res.redirect("/dashboard");
+    });
+  } else {
+    res.redirect("/admin?error=Invalid credentials");
+  }
+});
+
+// Admin logout route
+app.get("/logout", (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("Logout error:", err);
+    }
+    res.redirect("/admin");
   });
 });
 
