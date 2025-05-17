@@ -37,6 +37,19 @@ app.use('/js', express.static(path.join(__dirname, 'src', 'public', 'js')));
 app.use('/css', express.static(path.join(__dirname, 'src', 'public', 'css')));
 app.use('/images', express.static(path.join(__dirname, 'src', 'public', 'images')));
 
+const MongoDBStore = require('connect-mongodb-session')(session);
+
+// Create a MongoDB session store
+const store = new MongoDBStore({
+  uri: process.env.MONGODB_URI,
+  collection: 'sessions'
+});
+
+// Catch errors
+store.on('error', function(error) {
+  console.error('MongoDB session store error:', error);
+});
+
 // Session setup
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key',
@@ -45,7 +58,8 @@ app.use(session({
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
+  },
+  store: store
 }));
 
 // Error handling
