@@ -121,21 +121,6 @@ store.on('error', function(error) {
 });
 
 // Check if MongoDB is properly connected
-store.on('ready', function() {
-  console.log('MongoDB session store ready');
-});
-
-// Log session store stats
-setInterval(() => {
-  store.all((err, sessions) => {
-    if (err) {
-      console.error('Error getting sessions:', err);
-      return;
-    }
-    console.log('Current sessions count:', sessions.length);
-  });
-}, 60000); // Every minute
-
 // Session setup
 app.use(session({
   store: store,
@@ -158,14 +143,18 @@ app.use(session({
 // Add session initialization middleware
 app.use((req, res, next) => {
   if (!req.session) {
-    req.session = {};
+    console.log('Session not initialized');
+    next();
+  } else {
+    console.log('Session exists:', req.session);
+    next();
   }
-  next();
 });
 
 // Add session save middleware
 app.use((req, res, next) => {
   if (req.session && req.session.isAuthenticated) {
+    console.log('Saving authenticated session');
     req.session.save(err => {
       if (err) {
         console.error('Error saving session:', err);
@@ -177,9 +166,11 @@ app.use((req, res, next) => {
   }
 });
 
-// Add session initialization middleware
-app.use((req, res, next) => {
-  // Initialize session if it doesn't exist
+// Add error logging middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err.stack);
+  console.error('Session:', req.session);
+  res.status(500).send('Something broke!');
   if (!req.session) {
     req.session = {};
   }
