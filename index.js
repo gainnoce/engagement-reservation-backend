@@ -106,20 +106,52 @@ app.use(session({
   store: store,
   secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: true,
-  saveUninitialized: false,
+  saveUninitialized: true,
   cookie: {
     secure: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     httpOnly: true,
-    sameSite: 'none',
+    sameSite: 'lax',
     domain: '.onrender.com',
     path: '/',
     secure: true
   },
   name: 'engagement-session',
   rolling: true,
-  proxy: true
+  proxy: true,
+  genid: function(req) {
+    return require('crypto').randomBytes(24).toString('hex');
+  }
 }));
+
+// Add CORS middleware
+const cors = require('cors');
+app.use(cors({
+  origin: ['https://your-render-app.onrender.com'],
+  credentials: true
+}));
+
+// Add explicit cookie handling middleware
+app.use((req, res, next) => {
+  if (req.cookies['engagement-session']) {
+    req.sessionID = req.cookies['engagement-session'];
+  }
+  next();
+});
+
+// Add session save middleware
+app.use((req, res, next) => {
+  if (req.session && req.session.isAuthenticated) {
+    req.session.save(err => {
+      if (err) {
+        console.error('Error saving session:', err);
+      }
+      next();
+    });
+  } else {
+    next();
+  }
+});
 
 // Add session save middleware
 app.use((req, res, next) => {
