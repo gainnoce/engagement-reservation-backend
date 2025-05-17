@@ -139,17 +139,24 @@ const DEFAULT_COUNTRIES = {
 const isLoggedIn = (req, res, next) => {
   console.log("\n=== Auth Check ===");
   console.log("Session present:", !!req.session);
-  console.log("Session ID:", req.session?.id);
-  console.log("User in session:", req.session?.user);
-  console.log("Session authenticated:", req.session?.isAuthenticated);
+  console.log("Session ID:", req.sessionID);
+  console.log("Session data:", req.session);
   
-  if (req.session.isAuthenticated) {
-    console.log("User authenticated, proceeding...");
-    next();
-  } else {
+  // Check if session exists and is authenticated
+  if (!req.session || !req.session.isAuthenticated) {
     console.log("User not authenticated, redirecting to /admin");
     res.redirect("/admin");
+    return;
   }
+  
+  // Set user data for use in views
+  req.user = {
+    isAuthenticated: req.session.isAuthenticated,
+    role: req.session.userRole
+  };
+  
+  console.log("User authenticated, proceeding");
+  next();
 };
 
 // Role-based access middleware
